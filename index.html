@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ギター指板 音名クイズ</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app" id="app" data-state="idle">
+      <header class="header">
+        <h1 class="title">ギター指板 音名クイズ</h1>
+        <div class="stats">
+          <span class="stat" id="progress">0 / 7 問</span>
+          <span class="stat" id="miss">ミス 0</span>
+        </div>
+      </header>
+
+      <main class="main">
+        <section class="prompt" aria-live="polite">
+          <p class="prompt-question">
+            <strong class="prompt-note" id="question-note"></strong>
+            <span class="prompt-lead" id="prompt-lead"></span>
+          </p>
+          <p class="prompt-remaining" id="remaining"></p>
+        </section>
+
+        <section class="result" aria-live="polite">
+          <h2 class="result-title">セッション終了</h2>
+          <dl class="result-grid">
+            <div class="result-item">
+              <dt>出題数</dt>
+              <dd id="result-questions">-</dd>
+            </div>
+            <div class="result-item">
+              <dt>正解タップ</dt>
+              <dd id="result-correct">-</dd>
+            </div>
+            <div class="result-item">
+              <dt>誤答タップ</dt>
+              <dd id="result-wrong">-</dd>
+            </div>
+            <div class="result-item is-primary">
+              <dt>正答率</dt>
+              <dd id="result-accuracy">-</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="board-area">
+          <div class="fretboard" id="fretboard"></div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <button class="primary-button" id="primary-button" type="button">スタート</button>
+      </footer>
+    </div>
+
+    <p class="sr-only" id="sr-status" role="status" aria-live="polite"></p>
+
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>

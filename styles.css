@@ -1,0 +1,385 @@
+:root {
+  --page-bg: #f4f1ec;
+  --panel-bg: #ffffff;
+  --text: #2a251f;
+  --muted: #7d7469;
+  --line: #e2ddd4;
+  --accent: #b4530f;
+
+  --wood-top: #7a5333;
+  --wood-mid: #5c3b24;
+  --wood-bottom: #462e1c;
+  --nut: #ece4d3;
+  --nut-area: #e6dece;
+  --fret-wire: #b9b3a5;
+  --string: #ddd8cc;
+
+  --correct: #2e7d32;
+  --wrong: #c62828;
+
+  --label-w: 52px;
+  --open-w: 60px;
+  --fret-w-max: 100px;
+  --row-h: 46px;
+  --number-h: 34px;
+  /* 1弦の上・6弦の下にも板がはみ出す分 */
+  --board-pad: 8px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 1024px;
+  background: var(--page-bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+}
+
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+/* ---------- ヘッダー ---------- */
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.title {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: 0.02em;
+}
+
+.stats {
+  display: flex;
+  gap: 20px;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.stat {
+  font-weight: 600;
+}
+
+/* ---------- 出題エリア ---------- */
+
+.main {
+  padding: 28px 0 8px;
+}
+
+.prompt {
+  text-align: center;
+  min-height: 128px;
+}
+
+.prompt-question {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 12px;
+}
+
+.prompt-note {
+  font-size: 56px;
+  line-height: 1.1;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.prompt-note:empty {
+  display: none;
+}
+
+.prompt-lead {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.prompt-remaining {
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* ---------- リザルト ---------- */
+
+.result {
+  display: none;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 20px 24px 24px;
+  background: var(--panel-bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.app[data-state='result'] .prompt {
+  display: none;
+}
+
+.app[data-state='result'] .result {
+  display: block;
+}
+
+.result-title {
+  margin: 0 0 16px;
+  font-size: 16px;
+  text-align: center;
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin: 0;
+}
+
+.result-item {
+  text-align: center;
+  padding: 12px 8px;
+  background: var(--page-bg);
+  border-radius: 8px;
+}
+
+.result-item.is-primary {
+  background: #fdf1e6;
+}
+
+.result-item dt {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.result-item dd {
+  margin: 6px 0 0;
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.result-item.is-primary dd {
+  color: var(--accent);
+}
+
+/* ---------- 指板 ---------- */
+
+.board-area {
+  margin-top: 28px;
+}
+
+.fretboard {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--label-w) var(--open-w) repeat(7, minmax(0, 1fr));
+  grid-template-rows: repeat(6, var(--row-h)) var(--number-h);
+  /* フレット数が少ないときにセルが横長になりすぎないよう 1 列の幅に上限を設ける */
+  max-width: calc(var(--label-w) + var(--open-w) + var(--fret-columns, 7) * var(--fret-w-max));
+  margin: 0 auto;
+}
+
+.board-bg {
+  position: absolute;
+  top: calc(var(--board-pad) * -1);
+  bottom: calc(var(--number-h) - var(--board-pad));
+  left: var(--label-w);
+  right: 0;
+  border-radius: 5px;
+  background: linear-gradient(180deg, var(--wood-top), var(--wood-mid) 55%, var(--wood-bottom));
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.28);
+}
+
+.nut-bg {
+  position: absolute;
+  top: calc(var(--board-pad) * -1);
+  bottom: calc(var(--number-h) - var(--board-pad));
+  left: var(--label-w);
+  width: var(--open-w);
+  border-right: 6px solid var(--nut);
+  border-radius: 5px 0 0 5px;
+  background: var(--nut-area);
+}
+
+.string-label {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.cell {
+  position: relative;
+  z-index: 1;
+  appearance: none;
+  padding: 0;
+  border: 0;
+  border-right: 2px solid var(--fret-wire);
+  background: transparent;
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+/* 弦 */
+.cell::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: var(--string-w, 2px);
+  transform: translateY(-50%);
+  /* 弦はセルの背景より上・音名ラベルより下に描く */
+  z-index: -1;
+  background: var(--string);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* ナット側は下地が明るいため、弦を暗い色で描く */
+.cell.is-open::before {
+  background: #a89e8b;
+}
+
+.cell.s1 { --string-w: 1px; }
+.cell.s2 { --string-w: 1.5px; }
+.cell.s3 { --string-w: 2px; }
+.cell.s4 { --string-w: 2.5px; }
+.cell.s5 { --string-w: 3px; }
+.cell.s6 { --string-w: 3.5px; }
+
+/* ポジションマーク（弦の境目に描くため、次の行の上に重ねる） */
+.cell.has-inlay {
+  z-index: 2;
+}
+
+.cell.has-inlay::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  pointer-events: none;
+}
+
+/* 開放弦（ナットの左側） */
+.cell.is-open {
+  background: var(--nut-area);
+  border-right: 6px solid var(--nut);
+  color: var(--text);
+}
+
+/* 判定済みのセルはホバーで色が戻らないよう除外する */
+.cell:not(:disabled):not(.is-correct):not(.is-wrong):hover {
+  background-color: rgba(255, 255, 255, 0.16);
+}
+
+.cell.is-open:not(:disabled):not(.is-correct):not(.is-wrong):hover {
+  background-color: #d9d0bd;
+}
+
+.cell:focus-visible {
+  outline: 3px solid #1e88e5;
+  outline-offset: -3px;
+}
+
+.cell.is-correct,
+.cell.is-correct.is-open {
+  background-color: var(--correct);
+  color: #fff;
+}
+
+.cell.is-wrong,
+.cell.is-wrong.is-open {
+  background-color: var(--wrong);
+  color: #fff;
+}
+
+.fretboard.is-locked .cell {
+  cursor: default;
+}
+
+/*
+ * クリア後・リザルトでは回答結果を見せる場面なので彩度は落とさない。
+ * グレーアウトはプレイ開始前だけに限定する。
+ */
+.app[data-state='idle'] .fretboard {
+  filter: grayscale(0.85);
+  opacity: 0.55;
+}
+
+.fret-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- フッター ---------- */
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.primary-button {
+  min-width: 180px;
+  padding: 13px 24px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.primary-button:not(:disabled):hover {
+  background: #9c4409;
+}
+
+.primary-button:disabled {
+  background: #ded9d1;
+  color: #948b7f;
+  cursor: default;
+}
+
+/* ---------- ユーティリティ ---------- */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
