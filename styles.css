@@ -32,10 +32,12 @@
 
 body {
   margin: 0;
-  min-width: 1024px;
   background: var(--page-bg);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  /* ダブルタップズームによるタップ反応の遅延を防ぐ */
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
 }
 
 .app {
@@ -236,6 +238,7 @@ body {
   font-variant-numeric: tabular-nums;
   cursor: pointer;
   transition: background-color 150ms ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* 弦 */
@@ -291,13 +294,28 @@ body {
   color: var(--text);
 }
 
-/* 判定済みのセルはホバーで色が戻らないよう除外する */
-.cell:not(:disabled):not(.is-correct):not(.is-wrong):hover {
-  background-color: rgba(255, 255, 255, 0.16);
+/*
+ * ホバー効果はマウスがある環境に限定する。
+ * タッチ端末では :hover がタップ後に残り、判定済みでないセルが選択中に見えてしまうため。
+ * 判定済みのセルは、ホバーで正誤の色が戻らないよう除外する。
+ */
+@media (hover: hover) {
+  .cell:not(:disabled):not(.is-correct):not(.is-wrong):hover {
+    background-color: rgba(255, 255, 255, 0.16);
+  }
+
+  .cell.is-open:not(:disabled):not(.is-correct):not(.is-wrong):hover {
+    background-color: #d9d0bd;
+  }
 }
 
-.cell.is-open:not(:disabled):not(.is-correct):not(.is-wrong):hover {
-  background-color: #d9d0bd;
+/* タッチ端末でも押した瞬間の手応えが出るようにする */
+.cell:not(:disabled):not(.is-correct):not(.is-wrong):active {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.cell.is-open:not(:disabled):not(.is-correct):not(.is-wrong):active {
+  background-color: #cec3ac;
 }
 
 .cell:focus-visible {
@@ -360,14 +378,130 @@ body {
   transition: background-color 150ms ease;
 }
 
-.primary-button:not(:disabled):hover {
-  background: #9c4409;
+@media (hover: hover) {
+  .primary-button:not(:disabled):hover {
+    background: #9c4409;
+  }
+}
+
+.primary-button:not(:disabled):active {
+  background: #8c3d08;
 }
 
 .primary-button:disabled {
   background: #ded9d1;
   color: #948b7f;
   cursor: default;
+}
+
+/* ---------- スマートフォン ---------- */
+
+/*
+ * 指板を 0〜7 フレットに絞ってあるため、横向きのまま画面幅に収まる。
+ * 弦ラベルと開放弦列を詰めてフレット列の幅を稼ぎ、行の高さでタップ領域を確保する。
+ * 375px 幅で 1 マスあたり約 42 × 48px。
+ */
+@media (max-width: 600px) {
+  :root {
+    --label-w: 30px;
+    --open-w: 34px;
+    /* 画面幅いっぱいまで使わせるため 1 列の上限を実質無効化する */
+    --fret-w-max: 200px;
+    --row-h: 48px;
+    --number-h: 26px;
+    --board-pad: 6px;
+  }
+
+  .app {
+    padding: 14px 10px 24px;
+  }
+
+  .title {
+    font-size: 15px;
+  }
+
+  .stats {
+    gap: 12px;
+    font-size: 12px;
+  }
+
+  .main {
+    padding: 18px 0 4px;
+  }
+
+  .prompt {
+    min-height: 96px;
+  }
+
+  .prompt-question {
+    gap: 8px;
+  }
+
+  .prompt-note {
+    font-size: 40px;
+  }
+
+  .prompt-lead {
+    font-size: 15px;
+  }
+
+  .prompt-remaining {
+    margin-top: 8px;
+    font-size: 13px;
+  }
+
+  .result {
+    padding: 16px 14px 18px;
+  }
+
+  .result-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .result-item dd {
+    font-size: 20px;
+  }
+
+  .board-area {
+    margin-top: 18px;
+  }
+
+  .string-label {
+    padding-right: 5px;
+    font-size: 10px;
+  }
+
+  .fret-number {
+    font-size: 10px;
+  }
+
+  .cell {
+    border-right-width: 1px;
+    font-size: 12px;
+  }
+
+  .cell.is-open,
+  .nut-bg {
+    border-right-width: 4px;
+  }
+
+  .cell.has-inlay::after {
+    bottom: -5px;
+    width: 10px;
+    height: 10px;
+    margin-left: -5px;
+  }
+
+  .footer {
+    margin-top: 20px;
+  }
+
+  .primary-button {
+    width: 100%;
+    padding: 15px 24px;
+    font-size: 16px;
+  }
 }
 
 /* ---------- ユーティリティ ---------- */
