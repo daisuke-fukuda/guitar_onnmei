@@ -11,26 +11,37 @@ import {
   fretRange,
 } from './music.js';
 
-/** ポジションマークの丸印を、どの弦のセルの下辺に描くか */
-const SINGLE_INLAY_STRING = 3;
-const DOUBLE_INLAY_STRINGS = [2, 4];
+/**
+ * ポジションマークを描く位置をグリッドの行範囲で表す。
+ * 実物のインレイと同じく弦と弦の境目に置くため、行の境界が中央に来る範囲を指定する。
+ */
+const SINGLE_INLAY_ROWS = [[3, 5]]; // 3弦と4弦の間
+const DOUBLE_INLAY_ROWS = [
+  [2, 4], // 2弦と3弦の間
+  [4, 6], // 4弦と5弦の間
+];
 
-function inlayClass(stringNo, fret) {
-  if (fret === DOUBLE_INLAY_FRET && DOUBLE_INLAY_STRINGS.includes(stringNo)) return 'has-inlay';
-  if (SINGLE_INLAY_FRETS.includes(fret) && stringNo === SINGLE_INLAY_STRING) return 'has-inlay';
-  return '';
+function inlayRowsFor(fret) {
+  if (fret === DOUBLE_INLAY_FRET) return DOUBLE_INLAY_ROWS;
+  if (SINGLE_INLAY_FRETS.includes(fret)) return SINGLE_INLAY_ROWS;
+  return [];
 }
 
 export function createFretboard(root, onCellClick) {
   const cells = new Map();
   const frets = fretRange();
 
-  // 開放弦列は固定幅、残りのフレット列は等分する。
-  // フレット数が少ないときにセルが横へ間延びしないよう、列数を CSS 側の上限計算にも渡す。
+  // 開放弦列は固定幅。フレット列は実物のギターと同じ比率で、高音側ほど狭くする。
+  // 弦長は 1 フレットごとに 2^(-1/12) 倍になるため、フレット間隔も同じ比率で縮む。
   const fretColumns = frets.length - 1;
-  root.style.setProperty('--fret-columns', String(fretColumns));
-  root.style.gridTemplateColumns =
-    `var(--label-w) var(--open-w) repeat(${fretColumns}, minmax(0, 1fr))`;
+  const ratios = [];
+  for (let i = 0; i < fretColumns; i++) ratios.push(Math.pow(2, -i / 12));
+
+  root.style.gridTemplateColumns = [
+    'var(--label-w)',
+    'var(--open-w)',
+    ...ratios.map((ratio) => `${ratio.toFixed(4)}fr`),
+  ].join(' ');
 
   // 板とナット部分の下地。セルの行より上下に少しはみ出させるため独立要素にする
   for (const className of ['board-bg', 'nut-bg']) {
@@ -38,6 +49,20 @@ export function createFretboard(root, onCellClick) {
     layer.className = className;
     layer.setAttribute('aria-hidden', 'true');
     root.appendChild(layer);
+  }
+
+  // ポジションマークはセルより下のレイヤーに敷く。
+  // 正解・誤答の色が上に来るため、実物で指を置いたときと同じくマークが隠れる。
+  for (const fret of frets) {
+    for (const [rowStart, rowEnd] of inlayRowsFor(fret)) {
+      const inlay = document.createElement('div');
+      inlay.className = 'inlay';
+      inlay.setAttribute('aria-hidden', 'true');
+      // 絶対配置のグリッドアイテムは終端を省くと auto（コンテナ端）扱いになるため span を明示する
+      inlay.style.gridColumn = `${fret - FRET_MIN + 2} / span 1`;
+      inlay.style.gridRow = `${rowStart} / ${rowEnd}`;
+      root.appendChild(inlay);
+    }
   }
 
   for (let stringNo = 1; stringNo <= STRING_COUNT; stringNo++) {
@@ -49,7 +74,7 @@ export function createFretboard(root, onCellClick) {
     for (const fret of frets) {
       const cell = document.createElement('button');
       cell.type = 'button';
-      cell.className = ['cell', `s${stringNo}`, fret === FRET_MIN ? 'is-open' : '', inlayClass(stringNo, fret)]
+      cell.className = ['cell', `s${stringNo}`, fret === FRET_MIN ? 'is-open' : '']
         .filter(Boolean)
         .join(' ');
       cell.dataset.string = String(stringNo);

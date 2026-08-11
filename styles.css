@@ -19,11 +19,11 @@
 
   --label-w: 52px;
   --open-w: 60px;
-  --fret-w-max: 100px;
-  --row-h: 46px;
-  --number-h: 34px;
+  /* 弦の間隔。1弦の上・6弦の下の余白はこの半分になる */
+  --row-h: 26px;
+  --number-h: 30px;
   /* 1弦の上・6弦の下にも板がはみ出す分 */
-  --board-pad: 8px;
+  --board-pad: 4px;
 }
 
 * {
@@ -186,16 +186,21 @@ body {
   display: grid;
   grid-template-columns: var(--label-w) var(--open-w) repeat(7, minmax(0, 1fr));
   grid-template-rows: repeat(6, var(--row-h)) var(--number-h);
-  /* フレット数が少ないときにセルが横長になりすぎないよう 1 列の幅に上限を設ける */
-  max-width: calc(var(--label-w) + var(--open-w) + var(--fret-columns, 7) * var(--fret-w-max));
+  width: 100%;
+  /* 大画面で間延びさせないための上限 */
+  max-width: 700px;
   margin: 0 auto;
 }
 
-.board-bg {
+.board-bg,
+.nut-bg {
   position: absolute;
   top: calc(var(--board-pad) * -1);
   bottom: calc(var(--number-h) - var(--board-pad));
   left: var(--label-w);
+}
+
+.board-bg {
   right: 0;
   border-radius: 5px;
   background: linear-gradient(180deg, var(--wood-top), var(--wood-mid) 55%, var(--wood-bottom));
@@ -203,10 +208,6 @@ body {
 }
 
 .nut-bg {
-  position: absolute;
-  top: calc(var(--board-pad) * -1);
-  bottom: calc(var(--number-h) - var(--board-pad));
-  left: var(--label-w);
   width: var(--open-w);
   border-right: 6px solid var(--nut);
   border-radius: 5px 0 0 5px;
@@ -269,22 +270,23 @@ body {
 .cell.s5 { --string-w: 3px; }
 .cell.s6 { --string-w: 3.5px; }
 
-/* ポジションマーク（弦の境目に描くため、次の行の上に重ねる） */
-.cell.has-inlay {
-  z-index: 2;
+/* ポジションマーク。セルより下に敷き、正解・誤答の色で隠れるようにする */
+.inlay {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
 }
 
-.cell.has-inlay::after {
+.inlay::before {
   content: '';
-  position: absolute;
-  left: 50%;
-  bottom: -6px;
-  width: 12px;
-  height: 12px;
-  margin-left: -6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.22);
-  pointer-events: none;
 }
 
 /* 開放弦（ナットの左側） */
@@ -405,11 +407,9 @@ body {
   :root {
     --label-w: 30px;
     --open-w: 34px;
-    /* 画面幅いっぱいまで使わせるため 1 列の上限を実質無効化する */
-    --fret-w-max: 200px;
-    --row-h: 48px;
+    --row-h: 32px;
     --number-h: 26px;
-    --board-pad: 6px;
+    --board-pad: 3px;
   }
 
   .app {
@@ -484,13 +484,6 @@ body {
   .cell.is-open,
   .nut-bg {
     border-right-width: 4px;
-  }
-
-  .cell.has-inlay::after {
-    bottom: -5px;
-    width: 10px;
-    height: 10px;
-    margin-left: -5px;
   }
 
   .footer {
