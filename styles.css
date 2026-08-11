@@ -135,6 +135,11 @@ body {
   display: block;
 }
 
+/* 結果画面ではスコアに集中させるため指板を出さない */
+.app[data-state='result'] .board-area {
+  display: none;
+}
+
 .result-title {
   margin: 0 0 16px;
   font-size: 16px;
