@@ -115,6 +115,95 @@ body {
   color: var(--muted);
 }
 
+/* ---------- 出題設定（スタート前のみ表示） ---------- */
+
+.settings {
+  display: none;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px 20px 18px;
+  background: var(--panel-bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.app[data-state='idle'] .settings {
+  display: block;
+}
+
+/* 設定画面では出題文が空になるため、その分の高さを詰める */
+.app[data-state='idle'] .prompt {
+  min-height: 0;
+  margin-bottom: 18px;
+}
+
+.settings-title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.setting-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.setting-label {
+  flex: none;
+  width: 72px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.setting-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.option input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.option input:disabled,
+.option input:disabled + * {
+  cursor: default;
+}
+
+.option:has(input:disabled) {
+  color: var(--muted);
+  cursor: default;
+}
+
+.settings-summary {
+  margin: 12px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.settings-summary.is-warning {
+  color: var(--wrong);
+  font-weight: 600;
+}
+
 /* ---------- リザルト ---------- */
 
 .result {
@@ -347,6 +436,23 @@ body {
 }
 
 /*
+ * 出題対象外の弦。opacity で薄くすると板が透けて明るくなり「無効」に見えないため、
+ * 暗いベールを重ねて沈める。
+ */
+.cell.is-muted::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: rgba(18, 12, 6, 0.55);
+  pointer-events: none;
+}
+
+.string-label.is-muted {
+  opacity: 0.4;
+}
+
+/*
  * クリア後・リザルトでは回答結果を見せる場面なので彩度は落とさない。
  * グレーアウトはプレイ開始前だけに限定する。
  */
@@ -369,7 +475,33 @@ body {
 .footer {
   display: flex;
   justify-content: flex-end;
+  gap: 10px;
   margin-top: 24px;
+}
+
+/* 「設定を変える」は結果画面だけに出す */
+.secondary-button {
+  display: none;
+  padding: 13px 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app[data-state='result'] .secondary-button {
+  display: block;
+}
+
+@media (hover: hover) {
+  .secondary-button:hover {
+    background: var(--page-bg);
+  }
 }
 
 .primary-button {
@@ -496,9 +628,29 @@ body {
   }
 
   .primary-button {
-    width: 100%;
+    /* 「設定を変える」と並ぶ場合も破綻しないよう、幅ではなく flex で伸ばす */
+    flex: 1;
     padding: 15px 24px;
     font-size: 16px;
+  }
+
+  .secondary-button {
+    flex: none;
+    padding: 15px 16px;
+  }
+
+  .settings {
+    padding: 14px 14px 16px;
+  }
+
+  /* ラベルと選択肢を縦に積み、選択肢の折り返しを減らす */
+  .setting-row {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .setting-label {
+    width: auto;
   }
 }
 

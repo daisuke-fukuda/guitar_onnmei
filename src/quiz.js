@@ -3,9 +3,23 @@
  * DOM に依存しない。状態はプレーンオブジェクトとして保持し、後で永続化できるようにする。
  */
 
-import { NATURAL_NOTES, findPositions, noteNameAt } from './music.js';
+import {
+  ALL_STRINGS,
+  FLAT_NOTES,
+  NATURAL_NOTES,
+  SHARP_NOTES,
+  findPositions,
+  isFlatName,
+  noteNameAt,
+} from './music.js';
 
-export const QUESTIONS_PER_SESSION = NATURAL_NOTES.length;
+export const QUESTIONS_PER_SESSION = 10;
+
+export const DEFAULT_SETTINGS = {
+  includeSharps: false,
+  includeFlats: false,
+  strings: [...ALL_STRINGS],
+};
 
 export function positionKey(stringNo, fret) {
   return `${stringNo}-${fret}`;
@@ -20,10 +34,36 @@ function shuffle(items) {
   return result;
 }
 
-function createQuestion(noteName) {
-  const positions = findPositions(noteName);
+/**
+ * 出題対象の音名を組み立てる。
+ * ♯ と ♭ は異名同音だが、呼び名を両方覚えられるよう別の問題として扱う。
+ * 対象弦に 1 箇所も存在しない音名は出題できないため除外する。
+ */
+export function buildNotePool(settings) {
+  const pool = [...NATURAL_NOTES];
+  if (settings.includeSharps) pool.push(...SHARP_NOTES);
+  if (settings.includeFlats) pool.push(...FLAT_NOTES);
+  return pool.filter((noteName) => findPositions(noteName, settings.strings).length > 0);
+}
+
+/**
+ * プールから出題数ぶんの音名を選ぶ。
+ * プールが出題数に満たない場合は、1 巡してから再度シャッフルして繰り返す
+ * （同じ音が 2 回出るが、1 巡目で全ての音を必ず 1 回は出せる）。
+ */
+function pickNotes(pool, count) {
+  const picked = [];
+  while (picked.length < count) {
+    picked.push(...shuffle(pool).slice(0, count - picked.length));
+  }
+  return picked;
+}
+
+function createQuestion(noteName, strings) {
+  const positions = findPositions(noteName, strings);
   return {
     noteName,
+    useFlats: isFlatName(noteName),
     positions,
     targetKeys: new Set(positions.map((p) => positionKey(p.string, p.fret))),
     found: new Set(),
@@ -31,10 +71,15 @@ function createQuestion(noteName) {
   };
 }
 
-/** ナチュラル7音をシャッフルし、各音を1回ずつ出題するセッションを作る */
-export function createSession() {
+export function createSession(settings = DEFAULT_SETTINGS) {
+  const pool = buildNotePool(settings);
+  if (pool.length === 0) throw new Error('出題できる音名がありません');
+
   return {
-    questions: shuffle(NATURAL_NOTES).map(createQuestion),
+    settings,
+    questions: pickNotes(pool, QUESTIONS_PER_SESSION).map((noteName) =>
+      createQuestion(noteName, settings.strings),
+    ),
     index: 0,
     score: { correctTaps: 0, wrongTaps: 0 },
   };
@@ -84,7 +129,8 @@ export function answer(session, stringNo, fret) {
 
   return {
     type: correct ? 'correct' : 'wrong',
-    noteName: noteNameAt(stringNo, fret),
+    // 誤答セルの音名は、出題中の問題と同じ表記系（♯ / ♭）で見せる
+    noteName: noteNameAt(stringNo, fret, question.useFlats),
     remaining: remainingCount(session),
     cleared: isCleared(session),
   };

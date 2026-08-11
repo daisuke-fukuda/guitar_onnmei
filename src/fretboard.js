@@ -4,6 +4,7 @@
  */
 
 import {
+  ALL_STRINGS,
   DOUBLE_INLAY_FRET,
   FRET_MIN,
   SINGLE_INLAY_FRETS,
@@ -29,7 +30,18 @@ function inlayRowsFor(fret) {
 
 export function createFretboard(root, onCellClick) {
   const cells = new Map();
+  const labels = new Map();
   const frets = fretRange();
+
+  // 出題対象の弦。対象外は薄く表示してクリックを受け付けない
+  let activeStrings = new Set(ALL_STRINGS);
+  let interactive = false;
+
+  function applyDisabled() {
+    for (const cell of cells.values()) {
+      cell.disabled = !interactive || !activeStrings.has(Number(cell.dataset.string));
+    }
+  }
 
   // 開放弦列は固定幅。フレット列は実物のギターと同じ比率で、高音側ほど狭くする。
   // 弦長は 1 フレットごとに 2^(-1/12) 倍になるため、フレット間隔も同じ比率で縮む。
@@ -70,6 +82,7 @@ export function createFretboard(root, onCellClick) {
     label.className = 'string-label';
     label.textContent = `${stringNo}弦`;
     root.appendChild(label);
+    labels.set(stringNo, label);
 
     for (const fret of frets) {
       const cell = document.createElement('button');
@@ -121,10 +134,21 @@ export function createFretboard(root, onCellClick) {
 
     /** 回答受付の可否を切り替える */
     setInteractive(enabled) {
+      interactive = enabled;
       root.classList.toggle('is-locked', !enabled);
+      applyDisabled();
+    },
+
+    /** 出題対象の弦を設定する。対象外の弦は薄く表示し、クリックを受け付けない */
+    setActiveStrings(strings) {
+      activeStrings = new Set(strings);
       for (const cell of cells.values()) {
-        cell.disabled = !enabled;
+        cell.classList.toggle('is-muted', !activeStrings.has(Number(cell.dataset.string)));
       }
+      for (const [stringNo, label] of labels) {
+        label.classList.toggle('is-muted', !activeStrings.has(stringNo));
+      }
+      applyDisabled();
     },
   };
 }

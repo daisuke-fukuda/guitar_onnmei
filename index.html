@@ -25,6 +25,33 @@
           <p class="prompt-remaining" id="remaining"></p>
         </section>
 
+        <section class="settings" id="settings">
+          <h2 class="settings-title">出題設定</h2>
+
+          <div class="setting-row">
+            <span class="setting-label">音の種類</span>
+            <div class="setting-options">
+              <label class="option"><input type="checkbox" checked disabled /> ナチュラル</label>
+              <label class="option"><input type="checkbox" id="opt-sharps" /> ♯ を含める</label>
+              <label class="option"><input type="checkbox" id="opt-flats" /> ♭ を含める</label>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <span class="setting-label">対象の弦</span>
+            <div class="setting-options" id="opt-strings">
+              <label class="option"><input type="checkbox" value="1" checked /> 1弦</label>
+              <label class="option"><input type="checkbox" value="2" checked /> 2弦</label>
+              <label class="option"><input type="checkbox" value="3" checked /> 3弦</label>
+              <label class="option"><input type="checkbox" value="4" checked /> 4弦</label>
+              <label class="option"><input type="checkbox" value="5" checked /> 5弦</label>
+              <label class="option"><input type="checkbox" value="6" checked /> 6弦</label>
+            </div>
+          </div>
+
+          <p class="settings-summary" id="settings-summary"></p>
+        </section>
+
         <section class="result" aria-live="polite">
           <h2 class="result-title">セッション終了</h2>
           <dl class="result-grid">
@@ -53,6 +80,7 @@
       </main>
 
       <footer class="footer">
+        <button class="secondary-button" id="secondary-button" type="button">設定を変える</button>
         <button class="primary-button" id="primary-button" type="button">スタート</button>
       </footer>
     </div>

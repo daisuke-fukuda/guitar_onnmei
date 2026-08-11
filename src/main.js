@@ -2,7 +2,7 @@
  * エントリポイント。画面状態の管理と DOM の配線のみを行う。
  */
 
-import { FRET_MAX, FRET_MIN } from './music.js';
+import { FRET_MAX, FRET_MIN, pitchClassOf } from './music.js';
 import { createFretboard } from './fretboard.js';
 import * as Quiz from './quiz.js';
 
@@ -20,11 +20,17 @@ const el = {
   questionNote: document.getElementById('question-note'),
   promptLead: document.getElementById('prompt-lead'),
   remaining: document.getElementById('remaining'),
+  settings: document.getElementById('settings'),
+  optSharps: document.getElementById('opt-sharps'),
+  optFlats: document.getElementById('opt-flats'),
+  optStrings: document.getElementById('opt-strings'),
+  settingsSummary: document.getElementById('settings-summary'),
   resultQuestions: document.getElementById('result-questions'),
   resultCorrect: document.getElementById('result-correct'),
   resultWrong: document.getElementById('result-wrong'),
   resultAccuracy: document.getElementById('result-accuracy'),
   primaryButton: document.getElementById('primary-button'),
+  secondaryButton: document.getElementById('secondary-button'),
   srStatus: document.getElementById('sr-status'),
 };
 
@@ -33,13 +39,27 @@ const board = createFretboard(document.getElementById('fretboard'), handleCellCl
 let session = null;
 let state = STATE.IDLE;
 
+/** 設定 UI の現在値を読み取る */
+function readSettings() {
+  const strings = [...el.optStrings.querySelectorAll('input[type="checkbox"]')]
+    .filter((input) => input.checked)
+    .map((input) => Number(input.value));
+
+  return {
+    includeSharps: el.optSharps.checked,
+    includeFlats: el.optFlats.checked,
+    strings,
+  };
+}
+
 function setState(next) {
   state = next;
   render();
 }
 
-function startSession() {
-  session = Quiz.createSession();
+function startSession(settings) {
+  session = Quiz.createSession(settings);
+  board.setActiveStrings(settings.strings);
   board.reset();
   setState(STATE.ANSWERING);
 }
@@ -66,8 +86,13 @@ function handleCellClick(stringNo, fret) {
 }
 
 function handlePrimaryClick() {
-  if (state === STATE.IDLE || state === STATE.RESULT) {
-    startSession();
+  if (state === STATE.IDLE) {
+    startSession(readSettings());
+    return;
+  }
+  if (state === STATE.RESULT) {
+    // 「もう一度」は直前と同じ設定で始める
+    startSession(session.settings);
     return;
   }
   if (state === STATE.CLEARED) {
@@ -77,6 +102,31 @@ function handlePrimaryClick() {
       startNextQuestion();
     }
   }
+}
+
+function handleSecondaryClick() {
+  if (state === STATE.RESULT) setState(STATE.IDLE);
+}
+
+function renderSettings() {
+  const settings = readSettings();
+
+  // 設定中も指板に対象弦を反映し、どこが出題範囲かを見せる
+  board.setActiveStrings(settings.strings);
+
+  if (settings.strings.length === 0) {
+    el.settingsSummary.textContent = '対象の弦を 1 つ以上選んでください';
+    el.settingsSummary.classList.add('is-warning');
+    el.primaryButton.disabled = true;
+    return;
+  }
+
+  const pool = Quiz.buildNotePool(settings);
+  const sorted = [...pool].sort((a, b) => pitchClassOf(a) - pitchClassOf(b));
+  el.settingsSummary.textContent =
+    `出題する音 ${pool.length} 種（${sorted.join('  ')}）／全 ${Quiz.QUESTIONS_PER_SESSION} 問`;
+  el.settingsSummary.classList.remove('is-warning');
+  el.primaryButton.disabled = false;
 }
 
 function renderResult() {
@@ -94,11 +144,11 @@ function render() {
     el.progress.textContent = `0 / ${Quiz.QUESTIONS_PER_SESSION} 問`;
     el.miss.textContent = 'ミス 0';
     el.questionNote.textContent = '';
-    el.promptLead.textContent = 'スタートを押すと出題が始まります';
+    el.promptLead.textContent = '';
     el.remaining.textContent = `指板 ${FRET_MIN}〜${FRET_MAX} フレットから、指定された音をすべて探します`;
     el.primaryButton.textContent = 'スタート';
-    el.primaryButton.disabled = false;
     board.setInteractive(false);
+    renderSettings();
     return;
   }
 
@@ -134,4 +184,9 @@ function render() {
 }
 
 el.primaryButton.addEventListener('click', handlePrimaryClick);
+el.secondaryButton.addEventListener('click', handleSecondaryClick);
+el.settings.addEventListener('change', () => {
+  if (state === STATE.IDLE) renderSettings();
+});
+
 render();
