@@ -150,6 +150,14 @@ body {
   padding: 6px 0;
 }
 
+/*
+ * display を指定した要素では hidden 属性が効かなくなるため、明示的に打ち消す。
+ * （hidden は display: none 相当だが、後から書いた display: flex に負ける）
+ */
+.setting-row[hidden] {
+  display: none;
+}
+
 .setting-label {
   flex: none;
   width: 72px;
