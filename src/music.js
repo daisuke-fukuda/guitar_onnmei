@@ -175,7 +175,8 @@ export const DEFAULT_INTERVAL_IDS = ['m3', 'M3', 'P4', 'P5', 'm7', 'M7'];
  */
 export const INTERVAL_PRESETS = [
   { id: 'triad', label: '三和音', intervals: ['m3', 'M3', 'P5'] },
-  { id: 'seventh', label: '四和音', intervals: ['m3', 'M3', 'P5', 'm7', 'M7'] },
+  // m7♭5（ハーフディミニッシュ）を含めるため ♭5 にあたる三全音も入れる
+  { id: 'seventh', label: '四和音', intervals: ['m3', 'M3', 'TT', 'P5', 'm7', 'M7'] },
   { id: 'all', label: 'テンションあり（全部）', intervals: INTERVALS.map((i) => i.id) },
 ];
 
