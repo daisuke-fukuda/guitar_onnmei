@@ -169,6 +169,22 @@ export const DEFAULT_INTERVAL_NAMING = INTERVAL_NAMINGS.JA;
 /** 既定で出題する度数。コードやアルペジオで実際に使う頻度が高いもの */
 export const DEFAULT_INTERVAL_IDS = ['m3', 'M3', 'P4', 'P5', 'm7', 'M7'];
 
+/**
+ * 度数の組み合わせプリセット。コードの構成音を単位にしてある。
+ * どれにも一致しない組み合わせは「カスタマイズ」として扱う。
+ */
+export const INTERVAL_PRESETS = [
+  { id: 'triad', label: '三和音', intervals: ['m3', 'M3', 'P5'] },
+  { id: 'seventh', label: '四和音', intervals: ['m3', 'M3', 'P5', 'm7', 'M7'] },
+  { id: 'all', label: 'テンションあり（全部）', intervals: INTERVALS.map((i) => i.id) },
+];
+
+const sortedKey = (ids) => [...ids].sort().join(',');
+
+export function findIntervalPreset(ids) {
+  return INTERVAL_PRESETS.find((preset) => sortedKey(preset.intervals) === sortedKey(ids));
+}
+
 export function intervalLabel(interval, naming = DEFAULT_INTERVAL_NAMING) {
   return naming === INTERVAL_NAMINGS.EN ? interval.en : interval.ja;
 }

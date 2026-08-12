@@ -6,7 +6,9 @@ import {
   DEFAULT_FRET_MAX,
   INTERVALS,
   INTERVAL_NAMINGS,
+  INTERVAL_PRESETS,
   findInterval,
+  findIntervalPreset,
   intervalLabel,
   DEFAULT_FRET_MIN,
   FRET_LIMIT,
@@ -42,6 +44,7 @@ const el = {
   settings: document.getElementById('settings'),
   optMode: document.getElementById('opt-mode'),
   optQuizType: document.getElementById('opt-quiz-type'),
+  optIntervalPreset: document.getElementById('opt-interval-preset'),
   optIntervals: document.getElementById('opt-intervals'),
   optTensions: document.getElementById('opt-tensions'),
   optIntervalNaming: document.getElementById('opt-interval-naming'),
@@ -163,6 +166,23 @@ function applyIntervalNaming(naming) {
   }
 }
 
+/** 度数のプリセット一覧を作る。一致しないときのための「カスタマイズ」も置く */
+function initIntervalPresets() {
+  for (const preset of [...INTERVAL_PRESETS, { id: 'custom', label: 'カスタマイズ' }]) {
+    const option = document.createElement('option');
+    option.value = preset.id;
+    option.textContent = preset.label;
+    el.optIntervalPreset.appendChild(option);
+  }
+}
+
+/** 度数のチェックボックス群に値を流し込む */
+function applyIntervalsToUI(ids) {
+  for (const input of document.querySelectorAll('#opt-intervals input, #opt-tensions input')) {
+    input.checked = ids.includes(input.value);
+  }
+}
+
 /** チューニングのプリセット一覧を作る。一致しないときのための「カスタム」も置く */
 function initTuningPresets() {
   for (const preset of [...TUNING_PRESETS, { id: 'custom', label: 'カスタム' }]) {
@@ -217,9 +237,7 @@ function applySettingsToUI(settings) {
   if (quizType) quizType.checked = true;
   const naming = el.optIntervalNaming.querySelector(`input[value="${settings.intervalNaming}"]`);
   if (naming) naming.checked = true;
-  for (const input of document.querySelectorAll('#opt-intervals input, #opt-tensions input')) {
-    input.checked = settings.intervals.includes(input.value);
-  }
+  applyIntervalsToUI(settings.intervals);
   const handedness = el.optHandedness.querySelector(
     `input[value="${settings.lefty ? 'left' : 'right'}"]`,
   );
@@ -363,6 +381,9 @@ function renderSettings() {
   // 度数まわりの設定は相対音モードのときだけ意味を持つ
   for (const row of el.intervalRows) row.hidden = !isInterval;
   applyIntervalNaming(settings.intervalNaming);
+
+  const intervalPreset = findIntervalPreset(settings.intervals);
+  el.optIntervalPreset.value = intervalPreset ? intervalPreset.id : 'custom';
 
   el.remaining.textContent =
     settings.mode === Quiz.MODES.TIME_ATTACK
@@ -611,6 +632,11 @@ el.settings.addEventListener('change', (event) => {
   if (event.target === el.optFretMin || event.target === el.optFretMax) {
     normalizeFretRange(event.target);
   }
+  // 度数のプリセットを選んだらチェックボックスへ流し込む
+  if (event.target === el.optIntervalPreset) {
+    const preset = INTERVAL_PRESETS.find((item) => item.id === el.optIntervalPreset.value);
+    if (preset) applyIntervalsToUI(preset.intervals);
+  }
   // プリセットを選んだら各弦へ流し込む（「カスタム」は表示専用なので何もしない）
   if (event.target === el.optTuningPreset) {
     const preset = TUNING_PRESETS.find((item) => item.id === el.optTuningPreset.value);
@@ -630,5 +656,6 @@ el.settings.addEventListener('change', (event) => {
 initFretSelects();
 initTuningPresets();
 initIntervalOptions();
+initIntervalPresets();
 applySettingsToUI(loadSettings());
 render();
