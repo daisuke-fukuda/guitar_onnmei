@@ -66,17 +66,18 @@ export function createFretboard(root, onCellClick) {
     const hasOpenColumn = frets[0] === 0;
     const frettedColumns = frets.filter((fret) => fret > 0);
 
-    root.classList.toggle('has-open-column', hasOpenColumn);
+    // minmax(0, …) にしないと、セル内の音名がそのまま列の下限になって
+    // 画面幅からはみ出す。横スクロールを出さないため必ず 0 まで縮められるようにする
     root.style.gridTemplateColumns = [
       'var(--label-w)',
       hasOpenColumn ? 'var(--open-w)' : '',
-      ...frettedColumns.map((fret) => `${fretWidthRatio(fret).toFixed(4)}fr`),
+      ...frettedColumns.map((fret) => `minmax(0, ${fretWidthRatio(fret).toFixed(4)}fr)`),
     ]
       .filter(Boolean)
       .join(' ');
 
-    // 列が細くなりすぎないよう下限を敷き、超えた分は指板だけ横スクロールさせる
-    root.style.setProperty('--fret-columns', String(frettedColumns.length));
+    // 列が増えて 1 マスが狭くなったときは文字を小さくする
+    root.classList.toggle('is-dense', frettedColumns.length > 10);
 
     /** グリッド上の列番号（1 始まり）。1 列目は弦ラベル */
     const columnOf = (fret) => frets.indexOf(fret) + 2;
@@ -128,10 +129,18 @@ export function createFretboard(root, onCellClick) {
     numberSpacer.className = 'fret-number-spacer';
     root.appendChild(numberSpacer);
 
+    // 列が多いと番号が重なって読めなくなるため、目印になるフレットだけを残す
+    const showEveryNumber = frets.length <= 12;
+    const isLandmark = (fret) =>
+      fret === frets[0] ||
+      fret === frets[frets.length - 1] ||
+      SINGLE_INLAY_FRETS.includes(fret) ||
+      DOUBLE_INLAY_FRETS.includes(fret);
+
     for (const fret of frets) {
       const number = document.createElement('div');
       number.className = 'fret-number';
-      number.textContent = String(fret);
+      number.textContent = showEveryNumber || isLandmark(fret) ? String(fret) : '';
       root.appendChild(number);
     }
 

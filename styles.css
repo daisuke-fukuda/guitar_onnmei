@@ -19,8 +19,6 @@
 
   --label-w: 52px;
   --open-w: 60px;
-  /* フレット 1 列の最小幅。これを下回ると指板を横スクロールさせる */
-  --fret-w-min: 36px;
   /* 弦の間隔。1弦の上・6弦の下の余白はこの半分になる */
   --row-h: 26px;
   --number-h: 30px;
@@ -366,9 +364,6 @@ body {
 
 .board-area {
   margin-top: 28px;
-  /* フレット範囲を広く取ったときは、ページではなく指板だけを横スクロールさせる */
-  overflow-x: auto;
-  padding-bottom: 2px;
 }
 
 .fretboard {
@@ -379,15 +374,7 @@ body {
   width: 100%;
   /* 大画面で間延びさせないための上限 */
   max-width: 700px;
-  /* 1 マスが細くなりすぎないための下限。超えた分は board-area 側でスクロールする */
-  min-width: calc(
-    var(--label-w) + var(--open-col-w, 0px) + var(--fret-columns, 7) * var(--fret-w-min)
-  );
   margin: 0 auto;
-}
-
-.fretboard.has-open-column {
-  --open-col-w: var(--open-w);
 }
 
 .board-bg,
@@ -438,6 +425,8 @@ body {
   cursor: pointer;
   transition: background-color 150ms ease;
   -webkit-tap-highlight-color: transparent;
+  /* 列が狭いとき、音名が隣のマスへはみ出さないようにする */
+  overflow: hidden;
 }
 
 /* 弦 */
@@ -574,6 +563,15 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* 列が多いときは 1 マスが狭くなるため、はみ出さないよう文字を詰める */
+.fretboard.is-dense .cell {
+  font-size: 10px;
+}
+
+.fretboard.is-dense .fret-number {
+  font-size: 10px;
+}
+
 /* ---------- フッター ---------- */
 
 .footer {
@@ -648,7 +646,6 @@ body {
   :root {
     --label-w: 30px;
     --open-w: 34px;
-    --fret-w-min: 34px;
     --row-h: 32px;
     --number-h: 26px;
     --board-pad: 3px;
