@@ -134,24 +134,44 @@ export function findPositions(noteName, range = {}) {
 
 /**
  * 音程（度数）。semitones は上行したときの半音数。
- * 下行は同じ数だけ下げるので、方向は出題側で持つ。
+ * ja / en は表記の切り替え用。呼び名が違うだけで指す音は同じ。
+ *
+ * オクターブを超えるテンション（9th 以降）は、実音としては 1 オクターブ内の
+ * 度数と同じ音名を指す（9th = 長2度）。呼び名を覚えるための別問題として扱う。
+ * 「♭9th 下」のような言い方は実用しないため、テンションは上行のみにする。
  */
 export const INTERVALS = [
-  { id: 'm2', label: '短2度', semitones: 1 },
-  { id: 'M2', label: '長2度', semitones: 2 },
-  { id: 'm3', label: '短3度', semitones: 3 },
-  { id: 'M3', label: '長3度', semitones: 4 },
-  { id: 'P4', label: '完全4度', semitones: 5 },
-  { id: 'TT', label: '三全音', semitones: 6 },
-  { id: 'P5', label: '完全5度', semitones: 7 },
-  { id: 'm6', label: '短6度', semitones: 8 },
-  { id: 'M6', label: '長6度', semitones: 9 },
-  { id: 'm7', label: '短7度', semitones: 10 },
-  { id: 'M7', label: '長7度', semitones: 11 },
+  { id: 'm2', ja: '短2度', en: '♭2nd', semitones: 1 },
+  { id: 'M2', ja: '長2度', en: '2nd', semitones: 2 },
+  { id: 'm3', ja: '短3度', en: '♭3rd', semitones: 3 },
+  { id: 'M3', ja: '長3度', en: '3rd', semitones: 4 },
+  { id: 'P4', ja: '完全4度', en: '4th', semitones: 5 },
+  { id: 'TT', ja: '三全音', en: '♭5th', semitones: 6 },
+  { id: 'P5', ja: '完全5度', en: '5th', semitones: 7 },
+  { id: 'm6', ja: '短6度', en: '♭6th', semitones: 8 },
+  { id: 'M6', ja: '長6度', en: '6th', semitones: 9 },
+  { id: 'm7', ja: '短7度', en: '♭7th', semitones: 10 },
+  { id: 'M7', ja: '長7度', en: '7th', semitones: 11 },
+
+  { id: 'b9', ja: '♭9度', en: '♭9th', semitones: 13, upOnly: true },
+  { id: '9', ja: '9度', en: '9th', semitones: 14, upOnly: true },
+  { id: 's9', ja: '♯9度', en: '♯9th', semitones: 15, upOnly: true },
+  { id: '11', ja: '11度', en: '11th', semitones: 17, upOnly: true },
+  { id: 's11', ja: '♯11度', en: '♯11th', semitones: 18, upOnly: true },
+  { id: 'b13', ja: '♭13度', en: '♭13th', semitones: 20, upOnly: true },
+  { id: '13', ja: '13度', en: '13th', semitones: 21, upOnly: true },
 ];
+
+/** 度数の表記 */
+export const INTERVAL_NAMINGS = { JA: 'ja', EN: 'en' };
+export const DEFAULT_INTERVAL_NAMING = INTERVAL_NAMINGS.JA;
 
 /** 既定で出題する度数。コードやアルペジオで実際に使う頻度が高いもの */
 export const DEFAULT_INTERVAL_IDS = ['m3', 'M3', 'P4', 'P5', 'm7', 'M7'];
+
+export function intervalLabel(interval, naming = DEFAULT_INTERVAL_NAMING) {
+  return naming === INTERVAL_NAMINGS.EN ? interval.en : interval.ja;
+}
 
 export function findInterval(id) {
   return INTERVALS.find((interval) => interval.id === id);

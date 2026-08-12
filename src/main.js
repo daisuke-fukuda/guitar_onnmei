@@ -5,7 +5,9 @@
 import {
   DEFAULT_FRET_MAX,
   INTERVALS,
+  INTERVAL_NAMINGS,
   findInterval,
+  intervalLabel,
   DEFAULT_FRET_MIN,
   FRET_LIMIT,
   NO_TUNING_OFFSETS,
@@ -41,7 +43,9 @@ const el = {
   optMode: document.getElementById('opt-mode'),
   optQuizType: document.getElementById('opt-quiz-type'),
   optIntervals: document.getElementById('opt-intervals'),
-  intervalRow: document.getElementById('interval-row'),
+  optTensions: document.getElementById('opt-tensions'),
+  optIntervalNaming: document.getElementById('opt-interval-naming'),
+  intervalRows: [...document.querySelectorAll('[data-interval-only]')],
   optStringCount: document.getElementById('opt-string-count'),
   optSharps: document.getElementById('opt-sharps'),
   optFlats: document.getElementById('opt-flats'),
@@ -129,7 +133,10 @@ function initFretSelects() {
   }
 }
 
-/** 度数のチェックボックスを作る */
+/**
+ * 度数のチェックボックスを作る。
+ * オクターブ内とテンションは性質が違うので行を分ける。
+ */
 function initIntervalOptions() {
   for (const interval of INTERVALS) {
     const label = document.createElement('label');
@@ -139,8 +146,19 @@ function initIntervalOptions() {
     input.type = 'checkbox';
     input.value = interval.id;
 
-    label.append(input, document.createTextNode(` ${interval.label}`));
-    el.optIntervals.appendChild(label);
+    const text = document.createElement('span');
+    text.dataset.intervalId = interval.id;
+
+    label.append(input, document.createTextNode(' '), text);
+    (interval.upOnly ? el.optTensions : el.optIntervals).appendChild(label);
+  }
+}
+
+/** 度数のラベルを、選ばれている表記に合わせて書き換える */
+function applyIntervalNaming(naming) {
+  for (const span of document.querySelectorAll('[data-interval-id]')) {
+    const interval = findInterval(span.dataset.intervalId);
+    if (interval) span.textContent = intervalLabel(interval, naming);
   }
 }
 
@@ -196,7 +214,9 @@ function applySettingsToUI(settings) {
   if (mode) mode.checked = true;
   const quizType = el.optQuizType.querySelector(`input[value="${settings.quizType}"]`);
   if (quizType) quizType.checked = true;
-  for (const input of el.optIntervals.querySelectorAll('input')) {
+  const naming = el.optIntervalNaming.querySelector(`input[value="${settings.intervalNaming}"]`);
+  if (naming) naming.checked = true;
+  for (const input of document.querySelectorAll('#opt-intervals input, #opt-tensions input')) {
     input.checked = settings.intervals.includes(input.value);
   }
   const stringCount = el.optStringCount.querySelector(`input[value="${settings.stringCount}"]`);
@@ -243,14 +263,16 @@ function readSettings() {
     tuning[Number(select.dataset.string) - 1] = Number(select.value);
   }
 
-  const intervals = [...el.optIntervals.querySelectorAll('input:checked')].map(
-    (input) => input.value,
-  );
+  const intervals = [
+    ...el.optIntervals.querySelectorAll('input:checked'),
+    ...el.optTensions.querySelectorAll('input:checked'),
+  ].map((input) => input.value);
 
   return {
     mode: el.optMode.querySelector('input:checked').value,
     quizType: el.optQuizType.querySelector('input:checked').value,
     intervals,
+    intervalNaming: el.optIntervalNaming.querySelector('input:checked').value,
     stringCount,
     tuning,
     includeSharps: el.optSharps.checked,
@@ -332,8 +354,9 @@ function renderSettings() {
   const settings = readSettings();
   const isInterval = settings.quizType === Quiz.QUIZ_TYPES.INTERVAL;
 
-  // 度数の選択は相対音モードのときだけ意味を持つ
-  el.intervalRow.hidden = !isInterval;
+  // 度数まわりの設定は相対音モードのときだけ意味を持つ
+  for (const row of el.intervalRows) row.hidden = !isInterval;
+  applyIntervalNaming(settings.intervalNaming);
 
   el.remaining.textContent =
     settings.mode === Quiz.MODES.TIME_ATTACK
@@ -387,7 +410,7 @@ function renderSettings() {
   if (isInterval) {
     const specs = Quiz.buildIntervalPool(settings);
     el.settingsSummary.textContent =
-      `${range}／${settings.intervals.length} 種の度数 × 上下＝${specs.length} 通り／全 ${Quiz.QUESTIONS_PER_SESSION} 問`;
+      `${range}／度数 ${settings.intervals.length} 種＝${specs.length} 通りの出題／全 ${Quiz.QUESTIONS_PER_SESSION} 問`;
   } else {
     const pool = Quiz.buildNotePool(settings);
     const sorted = [...pool].sort((a, b) => pitchClassOf(a) - pitchClassOf(b));
@@ -483,8 +506,10 @@ async function handleMoreClick() {
 function promptSuffix(question, verb) {
   if (!question.prompt) return `をすべて見つけ${verb}`;
   const interval = findInterval(question.prompt.intervalId);
-  const direction = question.prompt.direction === 'up' ? '上' : '下';
-  return `の ${interval.label}${direction} をすべて見つけ${verb}`;
+  const label = intervalLabel(interval, session.settings.intervalNaming);
+  // テンションは上行しか出さないので、方向を付けると冗長になる
+  const direction = interval.upOnly ? '' : question.prompt.direction === 'up' ? '上' : '下';
+  return `の ${label}${direction} をすべて見つけ${verb}`;
 }
 
 function renderResult() {

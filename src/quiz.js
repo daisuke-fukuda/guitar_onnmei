@@ -6,6 +6,7 @@
 import {
   ALL_STRINGS,
   DEFAULT_INTERVAL_IDS,
+  DEFAULT_INTERVAL_NAMING,
   DEFAULT_STRING_COUNT,
   NO_TUNING_OFFSETS,
   DEFAULT_FRET_MAX,
@@ -44,6 +45,7 @@ export const DEFAULT_SETTINGS = {
   mode: MODES.NORMAL,
   quizType: QUIZ_TYPES.NOTE,
   intervals: [...DEFAULT_INTERVAL_IDS],
+  intervalNaming: DEFAULT_INTERVAL_NAMING,
   stringCount: DEFAULT_STRING_COUNT,
   tuning: [...NO_TUNING_OFFSETS],
   includeSharps: false,
@@ -101,7 +103,9 @@ export function buildIntervalPool(settings) {
       const interval = findInterval(intervalId);
       if (!interval) continue;
 
-      for (const direction of ['up', 'down']) {
+      // テンションは「♭9th 下」のような言い方をしないため上行だけ出す
+      const directions = interval.upOnly ? ['up'] : ['up', 'down'];
+      for (const direction of directions) {
         const semitones = direction === 'up' ? interval.semitones : -interval.semitones;
         const answer = transposeName(root, semitones, useFlats);
         if (findPositions(answer, settings).length === 0) continue;

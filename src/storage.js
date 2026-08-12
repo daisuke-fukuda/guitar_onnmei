@@ -7,6 +7,7 @@
 import {
   FRET_LIMIT,
   INTERVALS,
+  INTERVAL_NAMINGS,
   MAX_STRING_COUNT,
   STRING_COUNTS,
   TUNING_OFFSET_LIMIT,
@@ -31,6 +32,10 @@ function normalize(raw) {
 
   if (Object.values(MODES).includes(raw.mode)) settings.mode = raw.mode;
   if (Object.values(QUIZ_TYPES).includes(raw.quizType)) settings.quizType = raw.quizType;
+
+  if (Object.values(INTERVAL_NAMINGS).includes(raw.intervalNaming)) {
+    settings.intervalNaming = raw.intervalNaming;
+  }
 
   if (Array.isArray(raw.intervals)) {
     const ids = INTERVALS.map((interval) => interval.id).filter((id) => raw.intervals.includes(id));
@@ -86,6 +91,7 @@ export function saveSettings(settings) {
         mode: settings.mode,
         quizType: settings.quizType,
         intervals: settings.intervals,
+        intervalNaming: settings.intervalNaming,
         stringCount: settings.stringCount,
         tuning: settings.tuning,
         includeSharps: settings.includeSharps,

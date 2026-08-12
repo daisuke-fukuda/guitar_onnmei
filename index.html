@@ -68,9 +68,26 @@
             </div>
           </div>
 
-          <div class="setting-row" id="interval-row" hidden>
-            <span class="setting-label">出題する度数</span>
+          <div class="setting-row" data-interval-only hidden>
+            <span class="setting-label">度数の表記</span>
+            <div class="setting-options" id="opt-interval-naming">
+              <label class="option">
+                <input type="radio" name="intervalNaming" value="ja" checked /> 和名（長3度）
+              </label>
+              <label class="option">
+                <input type="radio" name="intervalNaming" value="en" /> 英語（3rd）
+              </label>
+            </div>
+          </div>
+
+          <div class="setting-row" data-interval-only hidden>
+            <span class="setting-label">度数</span>
             <div class="setting-options" id="opt-intervals"></div>
+          </div>
+
+          <div class="setting-row" data-interval-only hidden>
+            <span class="setting-label">テンション</span>
+            <div class="setting-options" id="opt-tensions"></div>
           </div>
 
           <div class="setting-row">
