@@ -5,6 +5,7 @@
 
 import {
   ALL_STRINGS,
+  DEFAULT_STRING_COUNT,
   DEFAULT_FRET_MAX,
   DEFAULT_FRET_MIN,
   FLAT_NOTES,
@@ -31,6 +32,7 @@ export const MISS_PENALTY_MS = 3_000;
 
 export const DEFAULT_SETTINGS = {
   mode: MODES.NORMAL,
+  stringCount: DEFAULT_STRING_COUNT,
   includeSharps: false,
   includeFlats: false,
   strings: [...ALL_STRINGS],

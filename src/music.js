@@ -12,11 +12,23 @@ export const NATURAL_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 export const SHARP_NOTES = ['C#', 'D#', 'F#', 'G#', 'A#'];
 export const FLAT_NOTES = ['Db', 'Eb', 'Gb', 'Ab', 'Bb'];
 
-/** 標準チューニング。index 0 が 1弦（最高音）、index 5 が 6弦（最低音） */
-export const OPEN_STRING_MIDI = [64, 59, 55, 50, 45, 40];
+/**
+ * 標準チューニング。index 0 が 1弦（最高音）。
+ * 7 弦目は 7 弦ギターの標準である Low B（B1）。
+ */
+export const OPEN_STRING_MIDI = [64, 59, 55, 50, 45, 40, 35];
 
-export const STRING_COUNT = OPEN_STRING_MIDI.length;
-export const ALL_STRINGS = [1, 2, 3, 4, 5, 6];
+/** 選べる弦の本数 */
+export const STRING_COUNTS = [6, 7];
+export const MAX_STRING_COUNT = 7;
+export const DEFAULT_STRING_COUNT = 6;
+
+/** 弦番号の配列。本数を渡すとその範囲だけ返す */
+export function stringRange(stringCount = DEFAULT_STRING_COUNT) {
+  return Array.from({ length: stringCount }, (_, index) => index + 1);
+}
+
+export const ALL_STRINGS = stringRange(DEFAULT_STRING_COUNT);
 
 /** 選択できるフレットの上限（一般的なエレキギターのフルレンジ） */
 export const FRET_LIMIT = 24;

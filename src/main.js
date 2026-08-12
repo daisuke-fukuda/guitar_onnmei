@@ -3,11 +3,11 @@
  */
 
 import {
-  ALL_STRINGS,
   DEFAULT_FRET_MAX,
   DEFAULT_FRET_MIN,
   FRET_LIMIT,
   pitchClassOf,
+  stringRange,
 } from './music.js';
 import { createFretboard } from './fretboard.js';
 import * as Quiz from './quiz.js';
@@ -30,6 +30,7 @@ const el = {
   remaining: document.getElementById('remaining'),
   settings: document.getElementById('settings'),
   optMode: document.getElementById('opt-mode'),
+  optStringCount: document.getElementById('opt-string-count'),
   optSharps: document.getElementById('opt-sharps'),
   optFlats: document.getElementById('opt-flats'),
   optFretMin: document.getElementById('opt-fret-min'),
@@ -117,6 +118,8 @@ function initFretSelects() {
 function applySettingsToUI(settings) {
   const mode = el.optMode.querySelector(`input[value="${settings.mode}"]`);
   if (mode) mode.checked = true;
+  const stringCount = el.optStringCount.querySelector(`input[value="${settings.stringCount}"]`);
+  if (stringCount) stringCount.checked = true;
   el.optSharps.checked = settings.includeSharps;
   el.optFlats.checked = settings.includeFlats;
   el.optFretMin.value = String(settings.fretMin);
@@ -144,12 +147,17 @@ function normalizeFretRange(changedSelect) {
 
 /** 設定 UI の現在値を読み取る */
 function readSettings() {
+  const stringCountValue = Number(el.optStringCount.querySelector('input:checked').value);
+  // 弦の本数を超える弦は選ばれていても無視する
   const strings = [...el.optStrings.querySelectorAll('input[type="checkbox"]')]
-    .filter((input) => input.checked)
+    .filter((input) => input.checked && Number(input.value) <= stringCountValue)
     .map((input) => Number(input.value));
+
+  const stringCount = Number(el.optStringCount.querySelector('input:checked').value);
 
   return {
     mode: el.optMode.querySelector('input:checked').value,
+    stringCount,
     includeSharps: el.optSharps.checked,
     includeFlats: el.optFlats.checked,
     strings,
@@ -165,7 +173,7 @@ function setState(next) {
 
 function startSession(settings) {
   session = Quiz.createSession(settings);
-  board.setFretRange(settings.fretMin, settings.fretMax);
+  board.setLayout(settings.stringCount, settings.fretMin, settings.fretMax);
   board.setActiveStrings(settings.strings);
   board.reset();
   setState(STATE.ANSWERING);
@@ -233,8 +241,13 @@ function renderSettings() {
       ? '1 分で何問クリアできるか挑戦します（誤答すると 3 秒減ります）'
       : '指定された音を、指板からすべて探します';
 
+  // 弦の本数に応じて、対象の弦の選択肢を出し入れする
+  for (const option of el.optStrings.querySelectorAll('[data-string-option]')) {
+    option.hidden = Number(option.dataset.stringOption) > settings.stringCount;
+  }
+
   // 設定中も指板に反映し、どこが出題範囲かをスタート前に見せる
-  board.setFretRange(settings.fretMin, settings.fretMax);
+  board.setLayout(settings.stringCount, settings.fretMin, settings.fretMax);
   board.setActiveStrings(settings.strings);
 
   // 弦が 0 本の状態は復元しても出題できないため保存しない
@@ -262,8 +275,8 @@ function describeSettings(settings) {
   if (settings.includeFlats) notes.push('♭');
 
   const strings =
-    settings.strings.length === ALL_STRINGS.length
-      ? '全弦'
+    settings.strings.length === settings.stringCount
+      ? `全弦（${settings.stringCount}弦）`
       : `${settings.strings.join('・')}弦`;
 
   return `${notes.join('+')} / ${strings}`;
@@ -423,6 +436,14 @@ el.shareMore.addEventListener('click', handleMoreClick);
 el.settings.addEventListener('change', (event) => {
   if (event.target === el.optFretMin || event.target === el.optFretMax) {
     normalizeFretRange(event.target);
+  }
+  // 弦の本数を変えたら対象の弦を選び直す。増やした弦を毎回手で足すのは煩わしく、
+  // 減らしたときに範囲外の選択が残るのも避けたいため、その本数の全弦に揃える
+  if (el.optStringCount.contains(event.target)) {
+    const count = Number(el.optStringCount.querySelector('input:checked').value);
+    for (const input of el.optStrings.querySelectorAll('input[type="checkbox"]')) {
+      input.checked = Number(input.value) <= count;
+    }
   }
   if (state === STATE.IDLE) renderSettings();
 });

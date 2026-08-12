@@ -8,32 +8,34 @@ import {
   ALL_STRINGS,
   DEFAULT_FRET_MAX,
   DEFAULT_FRET_MIN,
+  DEFAULT_STRING_COUNT,
   DOUBLE_INLAY_FRETS,
   SINGLE_INLAY_FRETS,
-  STRING_COUNT,
   fretRange,
   fretWidthRatio,
 } from './music.js';
 
 /**
  * ポジションマークを描く位置をグリッドの行範囲で表す。
- * 実物のインレイと同じく弦と弦の境目に置くため、行の境界が中央に来る範囲を指定する。
+ * 実物のインレイと同じく指板の中心へ置くため、指定した行範囲の中央に丸を描く。
+ * 6 弦は行数が偶数なので 3〜4 弦の境目、7 弦は奇数なので 4 弦の中央が中心になる。
  */
-const SINGLE_INLAY_ROWS = [[3, 5]]; // 3弦と4弦の間
-const DOUBLE_INLAY_ROWS = [
-  [2, 4], // 2弦と3弦の間
-  [4, 6], // 4弦と5弦の間
-];
+const INLAY_ROWS = {
+  6: { single: [[3, 5]], double: [[2, 4], [4, 6]] },
+  7: { single: [[4, 5]], double: [[2, 4], [5, 7]] },
+};
 
-function inlayRowsFor(fret) {
-  if (DOUBLE_INLAY_FRETS.includes(fret)) return DOUBLE_INLAY_ROWS;
-  if (SINGLE_INLAY_FRETS.includes(fret)) return SINGLE_INLAY_ROWS;
+function inlayRowsFor(fret, stringCount) {
+  const rows = INLAY_ROWS[stringCount] ?? INLAY_ROWS[DEFAULT_STRING_COUNT];
+  if (DOUBLE_INLAY_FRETS.includes(fret)) return rows.double;
+  if (SINGLE_INLAY_FRETS.includes(fret)) return rows.single;
   return [];
 }
 
 export function createFretboard(root, onCellClick) {
   let cells = new Map();
   let labels = new Map();
+  let stringCount = DEFAULT_STRING_COUNT;
   let fretMin = DEFAULT_FRET_MIN;
   let fretMax = DEFAULT_FRET_MAX;
 
@@ -76,6 +78,8 @@ export function createFretboard(root, onCellClick) {
       .filter(Boolean)
       .join(' ');
 
+    root.style.gridTemplateRows = `repeat(${stringCount}, var(--row-h)) var(--number-h)`;
+
     // 列が増えて 1 マスが狭くなったときは文字を小さくする
     root.classList.toggle('is-dense', frettedColumns.length > 10);
 
@@ -93,7 +97,7 @@ export function createFretboard(root, onCellClick) {
     // ポジションマークはセルより下のレイヤーに敷く。
     // 正解・誤答の色が上に来るため、実物で指を置いたときと同じくマークが隠れる。
     for (const fret of frets) {
-      for (const [rowStart, rowEnd] of inlayRowsFor(fret)) {
+      for (const [rowStart, rowEnd] of inlayRowsFor(fret, stringCount)) {
         const inlay = document.createElement('div');
         inlay.className = 'inlay';
         inlay.setAttribute('aria-hidden', 'true');
@@ -104,7 +108,7 @@ export function createFretboard(root, onCellClick) {
       }
     }
 
-    for (let stringNo = 1; stringNo <= STRING_COUNT; stringNo++) {
+    for (let stringNo = 1; stringNo <= stringCount; stringNo++) {
       const label = document.createElement('div');
       label.className = 'string-label';
       label.textContent = `${stringNo}弦`;
@@ -173,9 +177,10 @@ export function createFretboard(root, onCellClick) {
       }
     },
 
-    /** 表示するフレット範囲を設定する。変化があったときだけ組み直す */
-    setFretRange(nextMin, nextMax) {
-      if (nextMin === fretMin && nextMax === fretMax) return;
+    /** 弦の本数とフレット範囲を設定する。変化があったときだけ組み直す */
+    setLayout(nextStringCount, nextMin, nextMax) {
+      if (nextStringCount === stringCount && nextMin === fretMin && nextMax === fretMax) return;
+      stringCount = nextStringCount;
       fretMin = nextMin;
       fretMax = nextMax;
       build();

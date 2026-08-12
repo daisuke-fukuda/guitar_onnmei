@@ -352,6 +352,10 @@ body {
   display: none;
 }
 
+.option[hidden] {
+  display: none;
+}
+
 .share-icon {
   display: block;
   flex: none;
@@ -387,6 +391,7 @@ body {
   position: relative;
   display: grid;
   /* 列は JS で組み立てる（弦ラベル / 開放弦 / 各フレット） */
+  /* 行数は弦の本数に応じて JS で設定する */
   grid-template-rows: repeat(6, var(--row-h)) var(--number-h);
   width: 100%;
   /* 大画面で間延びさせないための上限 */
@@ -473,6 +478,7 @@ body {
 .cell.s4 { --string-w: 2.5px; }
 .cell.s5 { --string-w: 3px; }
 .cell.s6 { --string-w: 3.5px; }
+.cell.s7 { --string-w: 4px; }
 
 /* ポジションマーク。セルより下に敷き、正解・誤答の色で隠れるようにする */
 .inlay {

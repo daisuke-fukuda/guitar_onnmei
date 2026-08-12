@@ -4,7 +4,7 @@
  * 例外で止まらないよう、読み書きは失敗しても既定値で動き続ける。
  */
 
-import { ALL_STRINGS, FRET_LIMIT } from './music.js';
+import { FRET_LIMIT, STRING_COUNTS, stringRange } from './music.js';
 import { DEFAULT_SETTINGS, MODES } from './quiz.js';
 
 const STORAGE_KEY = 'guitar-onnmei:settings';
@@ -23,12 +23,16 @@ function normalize(raw) {
   if (!raw || typeof raw !== 'object') return settings;
 
   if (Object.values(MODES).includes(raw.mode)) settings.mode = raw.mode;
+  if (STRING_COUNTS.includes(raw.stringCount)) settings.stringCount = raw.stringCount;
 
   settings.includeSharps = raw.includeSharps === true;
   settings.includeFlats = raw.includeFlats === true;
 
   if (Array.isArray(raw.strings)) {
-    const strings = ALL_STRINGS.filter((stringNo) => raw.strings.includes(stringNo));
+    // 弦の本数を減らしたときに、範囲外の弦番号が残らないようにする
+    const strings = stringRange(settings.stringCount).filter((stringNo) =>
+      raw.strings.includes(stringNo),
+    );
     // 1 本も選ばれていない設定は出題できないので既定値へ戻す
     if (strings.length > 0) settings.strings = strings;
   }
@@ -58,6 +62,7 @@ export function saveSettings(settings) {
       STORAGE_KEY,
       JSON.stringify({
         mode: settings.mode,
+        stringCount: settings.stringCount,
         includeSharps: settings.includeSharps,
         includeFlats: settings.includeFlats,
         strings: settings.strings,
