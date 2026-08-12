@@ -16,6 +16,7 @@
 
   --correct: #2e7d32;
   --wrong: #c62828;
+  --root: #1565c0;
 
   --label-w: 52px;
   --open-w: 60px;
@@ -627,21 +628,21 @@ body {
  * 判定済みのセルは、ホバーで正誤の色が戻らないよう除外する。
  */
 @media (hover: hover) {
-  .cell:not(:disabled):not(.is-correct):not(.is-wrong):hover {
+  .cell:not(:disabled):not(.is-correct):not(.is-wrong):not(.is-root):hover {
     background-color: rgba(255, 255, 255, 0.16);
   }
 
-  .cell.is-open:not(:disabled):not(.is-correct):not(.is-wrong):hover {
+  .cell.is-open:not(:disabled):not(.is-correct):not(.is-wrong):not(.is-root):hover {
     background-color: #d9d0bd;
   }
 }
 
 /* タッチ端末でも押した瞬間の手応えが出るようにする */
-.cell:not(:disabled):not(.is-correct):not(.is-wrong):active {
+.cell:not(:disabled):not(.is-correct):not(.is-wrong):not(.is-root):active {
   background-color: rgba(255, 255, 255, 0.3);
 }
 
-.cell.is-open:not(:disabled):not(.is-correct):not(.is-wrong):active {
+.cell.is-open:not(:disabled):not(.is-correct):not(.is-wrong):not(.is-root):active {
   background-color: #cec3ac;
 }
 
@@ -659,6 +660,13 @@ body {
 .cell.is-wrong,
 .cell.is-wrong.is-open {
   background-color: var(--wrong);
+  color: #fff;
+}
+
+/* 相対音モードで基準として示すルート音。正誤とは別物と分かる色にする */
+.cell.is-root,
+.cell.is-root.is-open {
+  background-color: var(--root);
   color: #fff;
 }
 

@@ -9,6 +9,7 @@ import {
   INTERVAL_PRESETS,
   findInterval,
   findIntervalPreset,
+  findPositions,
   intervalLabel,
   DEFAULT_FRET_MIN,
   FRET_LIMIT,
@@ -44,6 +45,7 @@ const el = {
   settings: document.getElementById('settings'),
   optMode: document.getElementById('opt-mode'),
   optQuizType: document.getElementById('opt-quiz-type'),
+  optShowRoot: document.getElementById('opt-show-root'),
   optIntervalPreset: document.getElementById('opt-interval-preset'),
   optIntervals: document.getElementById('opt-intervals'),
   optTensions: document.getElementById('opt-tensions'),
@@ -238,6 +240,7 @@ function applySettingsToUI(settings) {
   const naming = el.optIntervalNaming.querySelector(`input[value="${settings.intervalNaming}"]`);
   if (naming) naming.checked = true;
   applyIntervalsToUI(settings.intervals);
+  el.optShowRoot.checked = settings.showRoot;
   const handedness = el.optHandedness.querySelector(
     `input[value="${settings.lefty ? 'left' : 'right'}"]`,
   );
@@ -297,6 +300,7 @@ function readSettings() {
     lefty: el.optHandedness.querySelector('input:checked').value === 'left',
     intervals,
     intervalNaming: el.optIntervalNaming.querySelector('input:checked').value,
+    showRoot: el.optShowRoot.checked,
     stringCount,
     tuning,
     includeSharps: el.optSharps.checked,
@@ -317,13 +321,29 @@ function startSession(settings) {
   board.setLayout(settings.stringCount, settings.fretMin, settings.fretMax, settings.lefty);
   board.setActiveStrings(settings.strings);
   board.reset();
+  showRootHint();
   setState(STATE.ANSWERING);
 }
 
 function startNextQuestion() {
   Quiz.goToNextQuestion(session);
   board.reset();
+  showRootHint();
   setState(STATE.ANSWERING);
+}
+
+/**
+ * 相対音モードで、基準となるルート音の位置を先に示す。
+ * ルートを探す手間を省いて度数の把握に集中させるためのオプション。
+ */
+function showRootHint() {
+  const { settings } = session;
+  if (settings.quizType !== Quiz.QUIZ_TYPES.INTERVAL || !settings.showRoot) return;
+
+  const question = Quiz.currentQuestion(session);
+  for (const position of findPositions(question.prompt.root, settings)) {
+    board.markCell(position.string, position.fret, 'root', question.prompt.root);
+  }
 }
 
 function handleCellClick(stringNo, fret) {

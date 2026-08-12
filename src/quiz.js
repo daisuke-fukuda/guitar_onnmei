@@ -46,6 +46,7 @@ export const DEFAULT_SETTINGS = {
   quizType: QUIZ_TYPES.NOTE,
   intervals: [...DEFAULT_INTERVAL_IDS],
   intervalNaming: DEFAULT_INTERVAL_NAMING,
+  showRoot: false,
   stringCount: DEFAULT_STRING_COUNT,
   lefty: false,
   tuning: [...NO_TUNING_OFFSETS],

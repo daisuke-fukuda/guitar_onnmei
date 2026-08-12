@@ -53,6 +53,7 @@ function normalize(raw) {
   }
 
   settings.lefty = raw.lefty === true;
+  settings.showRoot = raw.showRoot === true;
   settings.includeSharps = raw.includeSharps === true;
   settings.includeFlats = raw.includeFlats === true;
 
@@ -93,6 +94,7 @@ export function saveSettings(settings) {
         quizType: settings.quizType,
         intervals: settings.intervals,
         intervalNaming: settings.intervalNaming,
+        showRoot: settings.showRoot,
         stringCount: settings.stringCount,
         lefty: settings.lefty,
         tuning: settings.tuning,

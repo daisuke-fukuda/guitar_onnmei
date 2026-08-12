@@ -169,18 +169,18 @@ export function createFretboard(root, onCellClick) {
   });
 
   return {
-    /** セルを正解 / 誤答状態にし、音名ラベルを出す */
+    /** セルに印を付け、音名ラベルを出す。type は correct / wrong / root */
     markCell(stringNo, fret, type, noteName) {
       const cell = cells.get(`${stringNo}-${fret}`);
       if (!cell) return;
-      cell.classList.add(type === 'correct' ? 'is-correct' : 'is-wrong');
+      cell.classList.add(`is-${type}`);
       cell.textContent = noteName;
     },
 
     /** 全セルを未回答状態へ戻す */
     reset() {
       for (const cell of cells.values()) {
-        cell.classList.remove('is-correct', 'is-wrong');
+        cell.classList.remove('is-correct', 'is-wrong', 'is-root');
         cell.textContent = '';
       }
     },
