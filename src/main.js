@@ -46,6 +46,7 @@ const el = {
   optTensions: document.getElementById('opt-tensions'),
   optIntervalNaming: document.getElementById('opt-interval-naming'),
   intervalRows: [...document.querySelectorAll('[data-interval-only]')],
+  optHandedness: document.getElementById('opt-handedness'),
   optStringCount: document.getElementById('opt-string-count'),
   optSharps: document.getElementById('opt-sharps'),
   optFlats: document.getElementById('opt-flats'),
@@ -219,6 +220,10 @@ function applySettingsToUI(settings) {
   for (const input of document.querySelectorAll('#opt-intervals input, #opt-tensions input')) {
     input.checked = settings.intervals.includes(input.value);
   }
+  const handedness = el.optHandedness.querySelector(
+    `input[value="${settings.lefty ? 'left' : 'right'}"]`,
+  );
+  if (handedness) handedness.checked = true;
   const stringCount = el.optStringCount.querySelector(`input[value="${settings.stringCount}"]`);
   if (stringCount) stringCount.checked = true;
   buildTuningControls(settings.stringCount);
@@ -271,6 +276,7 @@ function readSettings() {
   return {
     mode: el.optMode.querySelector('input:checked').value,
     quizType: el.optQuizType.querySelector('input:checked').value,
+    lefty: el.optHandedness.querySelector('input:checked').value === 'left',
     intervals,
     intervalNaming: el.optIntervalNaming.querySelector('input:checked').value,
     stringCount,
@@ -290,7 +296,7 @@ function setState(next) {
 
 function startSession(settings) {
   session = Quiz.createSession(settings);
-  board.setLayout(settings.stringCount, settings.fretMin, settings.fretMax);
+  board.setLayout(settings.stringCount, settings.fretMin, settings.fretMax, settings.lefty);
   board.setActiveStrings(settings.strings);
   board.reset();
   setState(STATE.ANSWERING);
@@ -386,7 +392,7 @@ function renderSettings() {
   }
 
   // 設定中も指板に反映し、どこが出題範囲かをスタート前に見せる
-  board.setLayout(settings.stringCount, settings.fretMin, settings.fretMax);
+  board.setLayout(settings.stringCount, settings.fretMin, settings.fretMax, settings.lefty);
   board.setActiveStrings(settings.strings);
 
   // 弦が 0 本の状態は復元しても出題できないため保存しない

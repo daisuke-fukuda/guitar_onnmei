@@ -460,6 +460,13 @@ body {
   left: var(--label-w);
 }
 
+/* 左利きは弦ラベルが右端に来るので、下地も左右を入れ替える */
+.fretboard.is-lefty .board-bg,
+.fretboard.is-lefty .nut-bg {
+  left: 0;
+  right: var(--label-w);
+}
+
 .board-bg {
   right: 0;
   border-radius: 5px;
@@ -472,6 +479,29 @@ body {
   border-right: 6px solid var(--nut);
   border-radius: 5px 0 0 5px;
   background: var(--nut-area);
+}
+
+.fretboard.is-lefty .nut-bg {
+  left: auto;
+  border-right: 0;
+  border-left: 6px solid var(--nut);
+  border-radius: 0 5px 5px 0;
+}
+
+/* フレットワイヤーとナットは、低音フレット側（左利きでは右）に引く */
+.fretboard.is-lefty .cell {
+  border-right: 0;
+  border-left: 2px solid var(--fret-wire);
+}
+
+.fretboard.is-lefty .cell.is-open {
+  border-left: 6px solid var(--nut);
+}
+
+.fretboard.is-lefty .string-label {
+  justify-content: flex-start;
+  padding-right: 0;
+  padding-left: 10px;
 }
 
 .string-label {

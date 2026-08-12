@@ -38,6 +38,8 @@ export function createFretboard(root, onCellClick) {
   let stringCount = DEFAULT_STRING_COUNT;
   let fretMin = DEFAULT_FRET_MIN;
   let fretMax = DEFAULT_FRET_MAX;
+  // 左利き: ナットを右に置き、フレットが右から左へ並ぶ
+  let lefty = false;
 
   // 出題対象の弦。対象外は暗く沈めてクリックを受け付けない
   let activeStrings = new Set(ALL_STRINGS);
@@ -68,23 +70,27 @@ export function createFretboard(root, onCellClick) {
     const hasOpenColumn = frets[0] === 0;
     const frettedColumns = frets.filter((fret) => fret > 0);
 
-    // minmax(0, …) にしないと、セル内の音名がそのまま列の下限になって
-    // 画面幅からはみ出す。横スクロールを出さないため必ず 0 まで縮められるようにする
-    root.style.gridTemplateColumns = [
+    // 左利きは列の並びごと反転する。弦ラベルもナット側（右）へ回す
+    const orderedFrets = lefty ? [...frets].reverse() : frets;
+    const columnSizes = [
       'var(--label-w)',
       hasOpenColumn ? 'var(--open-w)' : '',
       ...frettedColumns.map((fret) => `minmax(0, ${fretWidthRatio(fret).toFixed(4)}fr)`),
-    ]
-      .filter(Boolean)
-      .join(' ');
+    ].filter(Boolean);
+
+    root.classList.toggle('is-lefty', lefty);
+
+    // minmax(0, …) にしないと、セル内の音名がそのまま列の下限になって
+    // 画面幅からはみ出す。横スクロールを出さないため必ず 0 まで縮められるようにする
+    root.style.gridTemplateColumns = (lefty ? [...columnSizes].reverse() : columnSizes).join(' ');
 
     root.style.gridTemplateRows = `repeat(${stringCount}, var(--row-h)) var(--number-h)`;
 
     // 列が増えて 1 マスが狭くなったときは文字を小さくする
     root.classList.toggle('is-dense', frettedColumns.length > 10);
 
-    /** グリッド上の列番号（1 始まり）。1 列目は弦ラベル */
-    const columnOf = (fret) => frets.indexOf(fret) + 2;
+    /** グリッド上の列番号（1 始まり）。弦ラベルは右利きなら先頭、左利きなら末尾 */
+    const columnOf = (fret) => orderedFrets.indexOf(fret) + (lefty ? 1 : 2);
 
     // 板とナット部分の下地。セルの行より上下に少しはみ出させるため独立要素にする
     for (const className of hasOpenColumn ? ['board-bg', 'nut-bg'] : ['board-bg']) {
@@ -112,10 +118,9 @@ export function createFretboard(root, onCellClick) {
       const label = document.createElement('div');
       label.className = 'string-label';
       label.textContent = `${stringNo}弦`;
-      root.appendChild(label);
       labels.set(stringNo, label);
 
-      for (const fret of frets) {
+      const rowCells = orderedFrets.map((fret) => {
         const cell = document.createElement('button');
         cell.type = 'button';
         cell.className = ['cell', `s${stringNo}`, fret === 0 ? 'is-open' : '']
@@ -124,14 +129,16 @@ export function createFretboard(root, onCellClick) {
         cell.dataset.string = String(stringNo);
         cell.dataset.fret = String(fret);
         cell.setAttribute('aria-label', `${stringNo}弦 ${fret}フレット`);
-        root.appendChild(cell);
         cells.set(`${stringNo}-${fret}`, cell);
-      }
+        return cell;
+      });
+
+      root.append(...(lefty ? [...rowCells, label] : [label, ...rowCells]));
     }
 
     const numberSpacer = document.createElement('div');
     numberSpacer.className = 'fret-number-spacer';
-    root.appendChild(numberSpacer);
+    if (!lefty) root.appendChild(numberSpacer);
 
     // 列が多いと番号が重なって読めなくなるため、目印になるフレットだけを残す
     const showEveryNumber = frets.length <= 12;
@@ -141,12 +148,13 @@ export function createFretboard(root, onCellClick) {
       SINGLE_INLAY_FRETS.includes(fret) ||
       DOUBLE_INLAY_FRETS.includes(fret);
 
-    for (const fret of frets) {
+    for (const fret of orderedFrets) {
       const number = document.createElement('div');
       number.className = 'fret-number';
       number.textContent = showEveryNumber || isLandmark(fret) ? String(fret) : '';
       root.appendChild(number);
     }
+    if (lefty) root.appendChild(numberSpacer);
 
     applyMuted();
     applyDisabled();
@@ -177,12 +185,20 @@ export function createFretboard(root, onCellClick) {
       }
     },
 
-    /** 弦の本数とフレット範囲を設定する。変化があったときだけ組み直す */
-    setLayout(nextStringCount, nextMin, nextMax) {
-      if (nextStringCount === stringCount && nextMin === fretMin && nextMax === fretMax) return;
+    /** 弦の本数・フレット範囲・利き手を設定する。変化があったときだけ組み直す */
+    setLayout(nextStringCount, nextMin, nextMax, nextLefty) {
+      if (
+        nextStringCount === stringCount &&
+        nextMin === fretMin &&
+        nextMax === fretMax &&
+        nextLefty === lefty
+      ) {
+        return;
+      }
       stringCount = nextStringCount;
       fretMin = nextMin;
       fretMax = nextMax;
+      lefty = nextLefty;
       build();
     },
 

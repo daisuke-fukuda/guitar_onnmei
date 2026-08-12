@@ -52,6 +52,7 @@ function normalize(raw) {
     if (valid) settings.tuning = [...raw.tuning];
   }
 
+  settings.lefty = raw.lefty === true;
   settings.includeSharps = raw.includeSharps === true;
   settings.includeFlats = raw.includeFlats === true;
 
@@ -93,6 +94,7 @@ export function saveSettings(settings) {
         intervals: settings.intervals,
         intervalNaming: settings.intervalNaming,
         stringCount: settings.stringCount,
+        lefty: settings.lefty,
         tuning: settings.tuning,
         includeSharps: settings.includeSharps,
         includeFlats: settings.includeFlats,

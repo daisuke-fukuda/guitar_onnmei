@@ -47,6 +47,7 @@ export const DEFAULT_SETTINGS = {
   intervals: [...DEFAULT_INTERVAL_IDS],
   intervalNaming: DEFAULT_INTERVAL_NAMING,
   stringCount: DEFAULT_STRING_COUNT,
+  lefty: false,
   tuning: [...NO_TUNING_OFFSETS],
   includeSharps: false,
   includeFlats: false,
