@@ -2,7 +2,13 @@
  * エントリポイント。画面状態の管理と DOM の配線のみを行う。
  */
 
-import { ALL_STRINGS, FRET_MAX, FRET_MIN, pitchClassOf } from './music.js';
+import {
+  ALL_STRINGS,
+  DEFAULT_FRET_MAX,
+  DEFAULT_FRET_MIN,
+  FRET_LIMIT,
+  pitchClassOf,
+} from './music.js';
 import { createFretboard } from './fretboard.js';
 import * as Quiz from './quiz.js';
 
@@ -23,6 +29,8 @@ const el = {
   settings: document.getElementById('settings'),
   optSharps: document.getElementById('opt-sharps'),
   optFlats: document.getElementById('opt-flats'),
+  optFretMin: document.getElementById('opt-fret-min'),
+  optFretMax: document.getElementById('opt-fret-max'),
   optStrings: document.getElementById('opt-strings'),
   settingsSummary: document.getElementById('settings-summary'),
   resultQuestions: document.getElementById('result-questions'),
@@ -44,6 +52,38 @@ const board = createFretboard(document.getElementById('fretboard'), handleCellCl
 let session = null;
 let state = STATE.IDLE;
 
+/** フレット範囲のプルダウンを 0〜FRET_LIMIT で作る */
+function initFretSelects() {
+  for (const [select, initial] of [
+    [el.optFretMin, DEFAULT_FRET_MIN],
+    [el.optFretMax, DEFAULT_FRET_MAX],
+  ]) {
+    for (let fret = 0; fret <= FRET_LIMIT; fret++) {
+      const option = document.createElement('option');
+      option.value = String(fret);
+      option.textContent = String(fret);
+      select.appendChild(option);
+    }
+    select.value = String(initial);
+  }
+}
+
+/**
+ * 開始 > 終了 になった場合に、直前に触った側を優先してもう一方を寄せる。
+ * 選べない組み合わせを残すより、その場で辻褄を合わせるほうが迷わない。
+ */
+function normalizeFretRange(changedSelect) {
+  const min = Number(el.optFretMin.value);
+  const max = Number(el.optFretMax.value);
+  if (min <= max) return;
+
+  if (changedSelect === el.optFretMin) {
+    el.optFretMax.value = String(min);
+  } else {
+    el.optFretMin.value = String(max);
+  }
+}
+
 /** 設定 UI の現在値を読み取る */
 function readSettings() {
   const strings = [...el.optStrings.querySelectorAll('input[type="checkbox"]')]
@@ -54,6 +94,8 @@ function readSettings() {
     includeSharps: el.optSharps.checked,
     includeFlats: el.optFlats.checked,
     strings,
+    fretMin: Number(el.optFretMin.value),
+    fretMax: Number(el.optFretMax.value),
   };
 }
 
@@ -64,6 +106,7 @@ function setState(next) {
 
 function startSession(settings) {
   session = Quiz.createSession(settings);
+  board.setFretRange(settings.fretMin, settings.fretMax);
   board.setActiveStrings(settings.strings);
   board.reset();
   setState(STATE.ANSWERING);
@@ -116,7 +159,8 @@ function handleSecondaryClick() {
 function renderSettings() {
   const settings = readSettings();
 
-  // 設定中も指板に対象弦を反映し、どこが出題範囲かを見せる
+  // 設定中も指板に反映し、どこが出題範囲かをスタート前に見せる
+  board.setFretRange(settings.fretMin, settings.fretMax);
   board.setActiveStrings(settings.strings);
 
   if (settings.strings.length === 0) {
@@ -129,7 +173,7 @@ function renderSettings() {
   const pool = Quiz.buildNotePool(settings);
   const sorted = [...pool].sort((a, b) => pitchClassOf(a) - pitchClassOf(b));
   el.settingsSummary.textContent =
-    `出題する音 ${pool.length} 種（${sorted.join('  ')}）／全 ${Quiz.QUESTIONS_PER_SESSION} 問`;
+    `${settings.fretMin}〜${settings.fretMax}フレット／出題する音 ${pool.length} 種（${sorted.join('  ')}）／全 ${Quiz.QUESTIONS_PER_SESSION} 問`;
   el.settingsSummary.classList.remove('is-warning');
   el.primaryButton.disabled = false;
 }
@@ -226,7 +270,7 @@ function render() {
     el.miss.textContent = 'ミス 0';
     el.questionNote.textContent = '';
     el.promptLead.textContent = '';
-    el.remaining.textContent = `指板 ${FRET_MIN}〜${FRET_MAX} フレットから、指定された音をすべて探します`;
+    el.remaining.textContent = '指定された音を、指板からすべて探します';
     el.primaryButton.textContent = 'スタート';
     board.setInteractive(false);
     renderSettings();
@@ -268,8 +312,12 @@ el.primaryButton.addEventListener('click', handlePrimaryClick);
 el.secondaryButton.addEventListener('click', handleSecondaryClick);
 el.shareCopy.addEventListener('click', handleCopyClick);
 el.shareMore.addEventListener('click', handleMoreClick);
-el.settings.addEventListener('change', () => {
+el.settings.addEventListener('change', (event) => {
+  if (event.target === el.optFretMin || event.target === el.optFretMax) {
+    normalizeFretRange(event.target);
+  }
   if (state === STATE.IDLE) renderSettings();
 });
 
+initFretSelects();
 render();

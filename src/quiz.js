@@ -5,6 +5,8 @@
 
 import {
   ALL_STRINGS,
+  DEFAULT_FRET_MAX,
+  DEFAULT_FRET_MIN,
   FLAT_NOTES,
   NATURAL_NOTES,
   SHARP_NOTES,
@@ -19,6 +21,8 @@ export const DEFAULT_SETTINGS = {
   includeSharps: false,
   includeFlats: false,
   strings: [...ALL_STRINGS],
+  fretMin: DEFAULT_FRET_MIN,
+  fretMax: DEFAULT_FRET_MAX,
 };
 
 export function positionKey(stringNo, fret) {
@@ -43,7 +47,7 @@ export function buildNotePool(settings) {
   const pool = [...NATURAL_NOTES];
   if (settings.includeSharps) pool.push(...SHARP_NOTES);
   if (settings.includeFlats) pool.push(...FLAT_NOTES);
-  return pool.filter((noteName) => findPositions(noteName, settings.strings).length > 0);
+  return pool.filter((noteName) => findPositions(noteName, settings).length > 0);
 }
 
 /**
@@ -59,8 +63,8 @@ function pickNotes(pool, count) {
   return picked;
 }
 
-function createQuestion(noteName, strings) {
-  const positions = findPositions(noteName, strings);
+function createQuestion(noteName, settings) {
+  const positions = findPositions(noteName, settings);
   return {
     noteName,
     useFlats: isFlatName(noteName),
@@ -78,7 +82,7 @@ export function createSession(settings = DEFAULT_SETTINGS) {
   return {
     settings,
     questions: pickNotes(pool, QUESTIONS_PER_SESSION).map((noteName) =>
-      createQuestion(noteName, settings.strings),
+      createQuestion(noteName, settings),
     ),
     index: 0,
     score: { correctTaps: 0, wrongTaps: 0 },
