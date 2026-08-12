@@ -5,7 +5,7 @@
  */
 
 import { ALL_STRINGS, FRET_LIMIT } from './music.js';
-import { DEFAULT_SETTINGS } from './quiz.js';
+import { DEFAULT_SETTINGS, MODES } from './quiz.js';
 
 const STORAGE_KEY = 'guitar-onnmei:settings';
 
@@ -21,6 +21,8 @@ function isValidFret(value) {
 function normalize(raw) {
   const settings = { ...DEFAULT_SETTINGS };
   if (!raw || typeof raw !== 'object') return settings;
+
+  if (Object.values(MODES).includes(raw.mode)) settings.mode = raw.mode;
 
   settings.includeSharps = raw.includeSharps === true;
   settings.includeFlats = raw.includeFlats === true;
@@ -55,6 +57,7 @@ export function saveSettings(settings) {
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
+        mode: settings.mode,
         includeSharps: settings.includeSharps,
         includeFlats: settings.includeFlats,
         strings: settings.strings,

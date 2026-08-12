@@ -29,6 +29,7 @@ const el = {
   promptLead: document.getElementById('prompt-lead'),
   remaining: document.getElementById('remaining'),
   settings: document.getElementById('settings'),
+  optMode: document.getElementById('opt-mode'),
   optSharps: document.getElementById('opt-sharps'),
   optFlats: document.getElementById('opt-flats'),
   optFretMin: document.getElementById('opt-fret-min'),
@@ -36,10 +37,12 @@ const el = {
   optStrings: document.getElementById('opt-strings'),
   settingsSummary: document.getElementById('settings-summary'),
   resultQuestions: document.getElementById('result-questions'),
+  resultCountLabel: document.getElementById('result-count-label'),
   resultCorrect: document.getElementById('result-correct'),
   resultWrong: document.getElementById('result-wrong'),
   resultTime: document.getElementById('result-time'),
-  resultAccuracy: document.getElementById('result-accuracy'),
+  resultTimeLabel: document.getElementById('result-time-label'),
+  resultMain: document.getElementById('result-main'),
   primaryButton: document.getElementById('primary-button'),
   secondaryButton: document.getElementById('secondary-button'),
   shareX: document.getElementById('share-x'),
@@ -65,13 +68,29 @@ function formatDuration(ms) {
 }
 
 function renderTimer() {
-  el.timer.textContent = session ? formatDuration(Quiz.elapsedMs(session)) : '0:00';
+  if (!session) {
+    el.timer.textContent = '0:00';
+    return;
+  }
+  // タイムアタックは残り時間、通常モードは経過時間
+  const remaining = Quiz.remainingMs(session);
+  el.timer.textContent = formatDuration(remaining === null ? Quiz.elapsedMs(session) : remaining);
 }
 
-/** 回答中だけ時計を進める。1 秒表示なので 500ms 間隔で十分な精度が出る */
+/** 時計を進めつつ、タイムアタックの時間切れを拾う */
+function tick() {
+  if (session && state !== STATE.RESULT && Quiz.isTimeUp(session)) {
+    Quiz.finishSession(session);
+    setState(STATE.RESULT);
+    return;
+  }
+  renderTimer();
+}
+
+/** 回答中だけ時計を進める。残り時間の取りこぼしを防ぐため 250ms 間隔で見る */
 function setTimerRunning(running) {
   if (running && timerId === null) {
-    timerId = setInterval(renderTimer, 500);
+    timerId = setInterval(tick, 250);
   } else if (!running && timerId !== null) {
     clearInterval(timerId);
     timerId = null;
@@ -96,6 +115,8 @@ function initFretSelects() {
 
 /** 保存された設定を UI へ反映する */
 function applySettingsToUI(settings) {
+  const mode = el.optMode.querySelector(`input[value="${settings.mode}"]`);
+  if (mode) mode.checked = true;
   el.optSharps.checked = settings.includeSharps;
   el.optFlats.checked = settings.includeFlats;
   el.optFretMin.value = String(settings.fretMin);
@@ -128,6 +149,7 @@ function readSettings() {
     .map((input) => Number(input.value));
 
   return {
+    mode: el.optMode.querySelector('input:checked').value,
     includeSharps: el.optSharps.checked,
     includeFlats: el.optFlats.checked,
     strings,
@@ -161,7 +183,8 @@ function handleCellClick(stringNo, fret) {
   const result = Quiz.answer(session, stringNo, fret);
   if (result.type === 'ignored') return;
 
-  if (result.cleared && Quiz.isLastQuestion(session)) Quiz.finishSession(session);
+  const timeAttack = session.mode === Quiz.MODES.TIME_ATTACK;
+  if (result.cleared && !timeAttack && Quiz.isLastQuestion(session)) Quiz.finishSession(session);
 
   board.markCell(stringNo, fret, result.type, result.noteName);
   el.srStatus.textContent =
@@ -170,6 +193,13 @@ function handleCellClick(stringNo, fret) {
       : `不正解。${stringNo}弦 ${fret}フレットは ${result.noteName}`;
 
   setState(result.cleared ? STATE.CLEARED : STATE.ANSWERING);
+
+  // タイムアタックはテンポが命なので、正解を見せる間だけ置いて自動で次へ送る
+  if (result.cleared && timeAttack) {
+    setTimeout(() => {
+      if (state === STATE.CLEARED && !Quiz.isTimeUp(session)) startNextQuestion();
+    }, 400);
+  }
 }
 
 function handlePrimaryClick() {
@@ -197,6 +227,11 @@ function handleSecondaryClick() {
 
 function renderSettings() {
   const settings = readSettings();
+
+  el.remaining.textContent =
+    settings.mode === Quiz.MODES.TIME_ATTACK
+      ? '1 分で何問クリアできるか挑戦します（誤答すると 3 秒減ります）'
+      : '指定された音を、指板からすべて探します';
 
   // 設定中も指板に反映し、どこが出題範囲かをスタート前に見せる
   board.setFretRange(settings.fretMin, settings.fretMax);
@@ -236,10 +271,15 @@ function describeSettings(settings) {
 
 function buildShareText() {
   const stats = Quiz.summary(session);
+  const timeAttack = stats.mode === Quiz.MODES.TIME_ATTACK;
   return [
-    'ギター指板 音名クイズ',
-    `${stats.questionCount}問 正答率 ${stats.accuracy.toFixed(1)}%（正解 ${stats.correctTaps} / ミス ${stats.wrongTaps}）`,
-    `タイム ${formatDuration(stats.elapsedMs)}`,
+    timeAttack ? 'ギター指板 音名クイズ タイムアタック' : 'ギター指板 音名クイズ',
+    timeAttack
+      ? `1分で ${stats.clearedCount} 問クリア（正解 ${stats.correctTaps} / ミス ${stats.wrongTaps}）`
+      : `${stats.questionCount}問 正答率 ${stats.accuracy.toFixed(1)}%（正解 ${stats.correctTaps} / ミス ${stats.wrongTaps}）`,
+    timeAttack
+      ? `正答率 ${stats.accuracy.toFixed(1)}%`
+      : `タイム ${formatDuration(stats.elapsedMs)}`,
     `出題: ${describeSettings(session.settings)}`,
   ].join('\n');
 }
@@ -297,11 +337,20 @@ async function handleMoreClick() {
 
 function renderResult() {
   const stats = Quiz.summary(session);
-  el.resultQuestions.textContent = `${stats.questionCount} 問`;
+  const timeAttack = stats.mode === Quiz.MODES.TIME_ATTACK;
+
+  el.resultCountLabel.textContent = timeAttack ? 'クリア数' : '出題数';
+  el.resultQuestions.textContent = `${timeAttack ? stats.clearedCount : stats.questionCount} 問`;
   el.resultCorrect.textContent = `${stats.correctTaps} 回`;
   el.resultWrong.textContent = `${stats.wrongTaps} 回`;
-  el.resultTime.textContent = formatDuration(stats.elapsedMs);
-  el.resultAccuracy.textContent = `${stats.accuracy.toFixed(1)} %`;
+
+  // タイムアタックは持ち時間が固定なので、代わりに誤答で失った時間を出す
+  el.resultTimeLabel.textContent = timeAttack ? '時間ロス' : 'かかった時間';
+  el.resultTime.textContent = timeAttack
+    ? `-${formatDuration(stats.penaltyMs)}`
+    : formatDuration(stats.elapsedMs);
+
+  el.resultMain.textContent = `${stats.accuracy.toFixed(1)} %`;
   el.shareNote.textContent = '';
   updateShareLinks();
 }
@@ -314,7 +363,6 @@ function render() {
     el.miss.textContent = 'ミス 0';
     el.questionNote.textContent = '';
     el.promptLead.textContent = '';
-    el.remaining.textContent = '指定された音を、指板からすべて探します';
     el.primaryButton.textContent = 'スタート';
     setTimerRunning(false);
     el.timer.textContent = '0:00';
@@ -323,7 +371,13 @@ function render() {
     return;
   }
 
-  el.progress.textContent = `${session.index + 1} / ${Quiz.QUESTIONS_PER_SESSION} 問`;
+  const timeAttack = session.mode === Quiz.MODES.TIME_ATTACK;
+  el.app.dataset.mode = session.mode;
+
+  // タイムアタックは総問題数が決まらないため、進捗はクリア数で見せる
+  el.progress.textContent = timeAttack
+    ? `${Quiz.clearedCount(session)} 問クリア`
+    : `${session.index + 1} / ${Quiz.QUESTIONS_PER_SESSION} 問`;
   el.miss.textContent = `ミス ${session.score.wrongTaps}`;
 
   setTimerRunning(state !== STATE.RESULT);
@@ -352,8 +406,13 @@ function render() {
   // STATE.CLEARED
   el.promptLead.textContent = 'をすべて見つけました';
   el.remaining.textContent = `クリア！　この問題のミス ${question.missed.size} 回`;
-  el.primaryButton.textContent = Quiz.isLastQuestion(session) ? '結果を見る' : '次の問題へ';
-  el.primaryButton.disabled = false;
+  // タイムアタックは自動で次へ送るため、ボタンを押させない
+  el.primaryButton.textContent = timeAttack
+    ? '次の問題へ'
+    : Quiz.isLastQuestion(session)
+      ? '結果を見る'
+      : '次の問題へ';
+  el.primaryButton.disabled = timeAttack;
   board.setInteractive(false);
 }
 

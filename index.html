@@ -45,6 +45,18 @@
           <h2 class="settings-title">出題設定</h2>
 
           <div class="setting-row">
+            <span class="setting-label">モード</span>
+            <div class="setting-options" id="opt-mode">
+              <label class="option">
+                <input type="radio" name="mode" value="normal" checked /> 通常（10問）
+              </label>
+              <label class="option">
+                <input type="radio" name="mode" value="timeattack" /> タイムアタック（1分）
+              </label>
+            </div>
+          </div>
+
+          <div class="setting-row">
             <span class="setting-label">音の種類</span>
             <div class="setting-options">
               <label class="option"><input type="checkbox" checked disabled /> ナチュラル</label>
@@ -84,8 +96,8 @@
         <section class="result" aria-live="polite">
           <h2 class="result-title">セッション終了</h2>
           <dl class="result-grid">
-            <div class="result-item">
-              <dt>出題数</dt>
+            <div class="result-item" id="result-count-item">
+              <dt id="result-count-label">出題数</dt>
               <dd id="result-questions">-</dd>
             </div>
             <div class="result-item">
@@ -97,12 +109,12 @@
               <dd id="result-wrong">-</dd>
             </div>
             <div class="result-item">
-              <dt>かかった時間</dt>
+              <dt id="result-time-label">かかった時間</dt>
               <dd id="result-time">-</dd>
             </div>
-            <div class="result-item is-primary">
-              <dt>正答率</dt>
-              <dd id="result-accuracy">-</dd>
+            <div class="result-item is-primary" id="result-main-item">
+              <dt id="result-main-label">正答率</dt>
+              <dd id="result-main">-</dd>
             </div>
           </dl>
 

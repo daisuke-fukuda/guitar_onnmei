@@ -15,9 +15,22 @@ import {
   noteNameAt,
 } from './music.js';
 
+export const MODES = {
+  NORMAL: 'normal',
+  TIME_ATTACK: 'timeattack',
+};
+
+/** 通常モードの出題数 */
 export const QUESTIONS_PER_SESSION = 10;
 
+/** タイムアタックの持ち時間 */
+export const TIME_ATTACK_DURATION_MS = 60_000;
+
+/** タイムアタックで 1 回誤答するごとに減る時間 */
+export const MISS_PENALTY_MS = 3_000;
+
 export const DEFAULT_SETTINGS = {
+  mode: MODES.NORMAL,
   includeSharps: false,
   includeFlats: false,
   strings: [...ALL_STRINGS],
@@ -75,20 +88,56 @@ function createQuestion(noteName, settings) {
   };
 }
 
+/** タイムアタックでは何問解けるか事前に決まらないため、1 問ずつ足していく */
+function appendQuestion(session) {
+  if (session.queue.length === 0) session.queue = shuffle(session.pool);
+  session.questions.push(createQuestion(session.queue.pop(), session.settings));
+  session.index = session.questions.length - 1;
+}
+
 export function createSession(settings = DEFAULT_SETTINGS) {
   const pool = buildNotePool(settings);
   if (pool.length === 0) throw new Error('出題できる音名がありません');
 
-  return {
+  const timeAttack = settings.mode === MODES.TIME_ATTACK;
+  const session = {
     settings,
-    questions: pickNotes(pool, QUESTIONS_PER_SESSION).map((noteName) =>
-      createQuestion(noteName, settings),
-    ),
+    mode: settings.mode,
+    pool,
+    queue: [],
+    questions: [],
     index: 0,
     score: { correctTaps: 0, wrongTaps: 0 },
     startedAt: Date.now(),
     finishedAt: null,
+    penaltyMs: 0,
+    durationMs: timeAttack ? TIME_ATTACK_DURATION_MS : null,
   };
+
+  if (timeAttack) {
+    appendQuestion(session);
+  } else {
+    for (const noteName of pickNotes(pool, QUESTIONS_PER_SESSION)) {
+      session.questions.push(createQuestion(noteName, settings));
+    }
+  }
+  return session;
+}
+
+/** 制限時間の残り（ミリ秒）。通常モードでは null */
+export function remainingMs(session) {
+  if (session.durationMs === null) return null;
+  const spent = (session.finishedAt ?? Date.now()) - session.startedAt;
+  return Math.max(0, session.durationMs - spent - session.penaltyMs);
+}
+
+export function isTimeUp(session) {
+  return session.durationMs !== null && remainingMs(session) === 0;
+}
+
+/** 全ポジションを見つけ終えた問題の数 */
+export function clearedCount(session) {
+  return session.questions.filter((q) => q.found.size === q.positions.length).length;
 }
 
 /** 計測を止める。最終問題をクリアした時点で呼ぶ */
@@ -119,7 +168,11 @@ export function isLastQuestion(session) {
 }
 
 export function goToNextQuestion(session) {
-  session.index += 1;
+  if (session.mode === MODES.TIME_ATTACK) {
+    appendQuestion(session);
+  } else {
+    session.index += 1;
+  }
 }
 
 /**
@@ -141,6 +194,8 @@ export function answer(session, stringNo, fret) {
   } else {
     question.missed.add(key);
     session.score.wrongTaps += 1;
+    // タイムアタックでは、あて推量で押すのを抑えるため持ち時間を削る
+    if (session.mode === MODES.TIME_ATTACK) session.penaltyMs += MISS_PENALTY_MS;
   }
 
   return {
@@ -156,10 +211,14 @@ export function summary(session) {
   const { correctTaps, wrongTaps } = session.score;
   const total = correctTaps + wrongTaps;
   return {
+    mode: session.mode,
     questionCount: session.questions.length,
+    clearedCount: clearedCount(session),
     correctTaps,
     wrongTaps,
     accuracy: total === 0 ? 0 : (correctTaps / total) * 100,
     elapsedMs: elapsedMs(session),
+    penaltyMs: session.penaltyMs,
+    durationMs: session.durationMs,
   };
 }
