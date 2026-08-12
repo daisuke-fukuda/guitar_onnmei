@@ -33,7 +33,6 @@ const el = {
   secondaryButton: document.getElementById('secondary-button'),
   shareX: document.getElementById('share-x'),
   shareLine: document.getElementById('share-line'),
-  shareFacebook: document.getElementById('share-facebook'),
   shareCopy: document.getElementById('share-copy'),
   shareMore: document.getElementById('share-more'),
   shareNote: document.getElementById('share-note'),
@@ -182,8 +181,6 @@ function updateShareLinks() {
 
   el.shareX.href = `https://x.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`;
   el.shareLine.href = `https://social-plugins.line.me/lineit/share?url=${encodedUrl}&text=${encodedText}`;
-  // Facebook は本文を受け取らず、リンク先の OGP を読んでカードを作る
-  el.shareFacebook.href = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
 
   // OS の共有シートは対応環境でのみ出す
   el.shareMore.hidden = !navigator.share;

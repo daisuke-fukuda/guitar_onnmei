@@ -9,7 +9,7 @@
       content="ギターの指板上の音名をクイズ形式で覚える練習アプリ。0〜7フレットから指定された音をすべて探します。"
     />
 
-    <!-- SNS でシェアされたときのカード表示用。Facebook はテキストを受け取らずここを読む -->
+    <!-- SNS でシェアされたときのカード表示用 -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="ギター指板 音名クイズ" />
     <meta
@@ -91,33 +91,16 @@
           <div class="result-actions">
             <p class="share-title">結果をシェア</p>
             <div class="share-buttons">
-              <a
-                class="share-chip is-x"
-                id="share-x"
-                target="_blank"
-                rel="noopener noreferrer"
-                >X</a
-              >
-              <a
-                class="share-chip is-line"
-                id="share-line"
-                target="_blank"
-                rel="noopener noreferrer"
-                >LINE</a
-              >
-              <a
-                class="share-chip is-facebook"
-                id="share-facebook"
-                target="_blank"
-                rel="noopener noreferrer"
-                >Facebook</a
-              >
-              <button class="share-chip is-copy" id="share-copy" type="button">
-                コピー
-              </button>
-              <button class="share-chip is-more" id="share-more" type="button">
-                その他
-              </button>
+              <a class="share-chip" id="share-x" target="_blank" rel="noopener noreferrer">
+                <img class="share-icon" src="assets/x-logo.svg" alt="" width="15" height="15" />
+                X
+              </a>
+              <a class="share-chip" id="share-line" target="_blank" rel="noopener noreferrer">
+                <img class="share-icon" src="assets/line-icon.png" alt="" width="18" height="18" />
+                LINE
+              </a>
+              <button class="share-chip" id="share-copy" type="button">コピー</button>
+              <button class="share-chip" id="share-more" type="button">その他</button>
             </div>
             <p class="share-note" id="share-note" role="status" aria-live="polite"></p>
           </div>

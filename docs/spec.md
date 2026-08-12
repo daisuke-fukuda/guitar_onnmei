@@ -388,16 +388,22 @@ idle ──[スタート]──> answering ──[全正解]──> cleared
 | --- | --- |
 | X | `https://x.com/intent/tweet?text=...&url=...` を別タブで開く |
 | LINE | `https://social-plugins.line.me/lineit/share?url=...&text=...` を別タブで開く |
-| Facebook | `https://www.facebook.com/sharer/sharer.php?u=...` を別タブで開く |
 | コピー | 本文と URL をクリップボードへ書き込み、「コピーしました」と一時表示する |
 | その他 | OS の共有シート（`navigator.share`）を開く。**非対応環境では非表示にする** |
 
-- X・LINE・Facebook は `<a target="_blank" rel="noopener noreferrer">` として実装する。ボタン + `window.open` ではポップアップブロックに掛かることがあるため
-- 各サービスのブランド色で塗り分け、押し先がひと目で分かるようにする
+- X・LINE は `<a target="_blank" rel="noopener noreferrer">` として実装する。ボタン + `window.open` ではポップアップブロックに掛かることがあるため
 - **いずれも自動投稿はしない。** 投稿するかは各サービスの画面でユーザーが決める
 - 共有シートをユーザーが閉じた場合（`AbortError`）はエラー表示を出さない
 
-**Facebook は本文を受け取らない。** リンク先の OGP を読んでカードを作るため、`index.html` に `og:title` / `og:description` / `og:url` と `twitter:card` を置く。
+リンク先の OGP からカードが作られるよう、`index.html` に `og:title` / `og:description` / `og:url` と `twitter:card` を置く。
+
+#### ロゴの扱い
+
+**各サービスのロゴは公式配布元から直接取得したものだけを使う。** 画像検索・アイコンライブラリ・ストックサイトからの取得は禁止されている（Meta は明示、他社も同様の方針）。取得元と加工内容は `assets/README.md` に記録する。
+
+- ボタンはブランド色で塗らず、白地に統一する。公式ボタンとの誤認を避けるため
+- ロゴに影やエフェクトをかけず、周囲の余白をボタンの padding で確保する
+- **Facebook のボタンは設けない。** Meta の Brand Resource Center は CDN が署名付き URL でブラウザセッションを要求し、公式アセットを取得できなかったため。公式アセットなしでのロゴ掲載は行わない
 
 ---
 
