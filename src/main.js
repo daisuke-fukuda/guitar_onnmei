@@ -11,6 +11,7 @@ import {
 } from './music.js';
 import { createFretboard } from './fretboard.js';
 import * as Quiz from './quiz.js';
+import { loadSettings, saveSettings } from './storage.js';
 
 const STATE = {
   IDLE: 'idle',
@@ -65,6 +66,17 @@ function initFretSelects() {
       select.appendChild(option);
     }
     select.value = String(initial);
+  }
+}
+
+/** 保存された設定を UI へ反映する */
+function applySettingsToUI(settings) {
+  el.optSharps.checked = settings.includeSharps;
+  el.optFlats.checked = settings.includeFlats;
+  el.optFretMin.value = String(settings.fretMin);
+  el.optFretMax.value = String(settings.fretMax);
+  for (const input of el.optStrings.querySelectorAll('input[type="checkbox"]')) {
+    input.checked = settings.strings.includes(Number(input.value));
   }
 }
 
@@ -162,6 +174,9 @@ function renderSettings() {
   // 設定中も指板に反映し、どこが出題範囲かをスタート前に見せる
   board.setFretRange(settings.fretMin, settings.fretMax);
   board.setActiveStrings(settings.strings);
+
+  // 弦が 0 本の状態は復元しても出題できないため保存しない
+  if (settings.strings.length > 0) saveSettings(settings);
 
   if (settings.strings.length === 0) {
     el.settingsSummary.textContent = '対象の弦を 1 つ以上選んでください';
@@ -320,4 +335,5 @@ el.settings.addEventListener('change', (event) => {
 });
 
 initFretSelects();
+applySettingsToUI(loadSettings());
 render();
