@@ -269,6 +269,48 @@ body {
   color: var(--accent);
 }
 
+.result-actions {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+
+.share-button {
+  min-width: 180px;
+  padding: 11px 22px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--panel-bg);
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: hover) {
+  .share-button:hover {
+    background: #fdf1e6;
+  }
+}
+
+.share-button:active {
+  background: #f9e3cf;
+}
+
+.share-note {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.share-note:empty {
+  display: none;
+}
+
 /* ---------- 指板 ---------- */
 
 .board-area {

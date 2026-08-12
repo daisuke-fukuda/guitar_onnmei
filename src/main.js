@@ -2,7 +2,7 @@
  * エントリポイント。画面状態の管理と DOM の配線のみを行う。
  */
 
-import { FRET_MAX, FRET_MIN, pitchClassOf } from './music.js';
+import { ALL_STRINGS, FRET_MAX, FRET_MIN, pitchClassOf } from './music.js';
 import { createFretboard } from './fretboard.js';
 import * as Quiz from './quiz.js';
 
@@ -31,6 +31,8 @@ const el = {
   resultAccuracy: document.getElementById('result-accuracy'),
   primaryButton: document.getElementById('primary-button'),
   secondaryButton: document.getElementById('secondary-button'),
+  shareButton: document.getElementById('share-button'),
+  shareNote: document.getElementById('share-note'),
   srStatus: document.getElementById('sr-status'),
 };
 
@@ -129,12 +131,63 @@ function renderSettings() {
   el.primaryButton.disabled = false;
 }
 
+/** 出題設定を一行で説明する（シェア文に載せる） */
+function describeSettings(settings) {
+  const notes = ['ナチュラル'];
+  if (settings.includeSharps) notes.push('♯');
+  if (settings.includeFlats) notes.push('♭');
+
+  const strings =
+    settings.strings.length === ALL_STRINGS.length
+      ? '全弦'
+      : `${settings.strings.join('・')}弦`;
+
+  return `${notes.join('+')} / ${strings}`;
+}
+
+function buildShareText() {
+  const stats = Quiz.summary(session);
+  return [
+    'ギター指板 音名クイズ',
+    `${stats.questionCount}問 正答率 ${stats.accuracy.toFixed(1)}%（正解 ${stats.correctTaps} / ミス ${stats.wrongTaps}）`,
+    `出題: ${describeSettings(session.settings)}`,
+  ].join('\n');
+}
+
+/** クエリやハッシュを落とした、共有に適したページ URL */
+function shareUrl() {
+  return `${location.origin}${location.pathname}`;
+}
+
+async function handleShareClick() {
+  if (!session) return;
+
+  const text = buildShareText();
+  const url = shareUrl();
+
+  // 対応環境（主にスマートフォン）では OS の共有シートに任せる
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: 'ギター指板 音名クイズ', text, url });
+      return;
+    } catch (error) {
+      // ユーザーが共有シートを閉じただけの場合は何もしない
+      if (error.name === 'AbortError') return;
+    }
+  }
+
+  // 非対応環境では X の投稿画面を開く（投稿はユーザーが確定する）
+  const intent = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+  window.open(intent, '_blank', 'noopener,noreferrer');
+}
+
 function renderResult() {
   const stats = Quiz.summary(session);
   el.resultQuestions.textContent = `${stats.questionCount} 問`;
   el.resultCorrect.textContent = `${stats.correctTaps} 回`;
   el.resultWrong.textContent = `${stats.wrongTaps} 回`;
   el.resultAccuracy.textContent = `${stats.accuracy.toFixed(1)} %`;
+  el.shareNote.textContent = navigator.share ? '' : 'X の投稿画面が開きます';
 }
 
 function render() {
@@ -185,6 +238,7 @@ function render() {
 
 el.primaryButton.addEventListener('click', handlePrimaryClick);
 el.secondaryButton.addEventListener('click', handleSecondaryClick);
+el.shareButton.addEventListener('click', handleShareClick);
 el.settings.addEventListener('change', () => {
   if (state === STATE.IDLE) renderSettings();
 });
