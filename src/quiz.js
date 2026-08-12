@@ -6,6 +6,7 @@
 import {
   ALL_STRINGS,
   DEFAULT_STRING_COUNT,
+  NO_TUNING_OFFSETS,
   DEFAULT_FRET_MAX,
   DEFAULT_FRET_MIN,
   FLAT_NOTES,
@@ -33,6 +34,7 @@ export const MISS_PENALTY_MS = 3_000;
 export const DEFAULT_SETTINGS = {
   mode: MODES.NORMAL,
   stringCount: DEFAULT_STRING_COUNT,
+  tuning: [...NO_TUNING_OFFSETS],
   includeSharps: false,
   includeFlats: false,
   strings: [...ALL_STRINGS],
@@ -203,7 +205,10 @@ export function answer(session, stringNo, fret) {
   return {
     type: correct ? 'correct' : 'wrong',
     // 誤答セルの音名は、出題中の問題と同じ表記系（♯ / ♭）で見せる
-    noteName: noteNameAt(stringNo, fret, question.useFlats),
+    noteName: noteNameAt(stringNo, fret, {
+      useFlats: question.useFlats,
+      tuning: session.settings.tuning,
+    }),
     remaining: remainingCount(session),
     cleared: isCleared(session),
   };

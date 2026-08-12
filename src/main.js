@@ -6,6 +6,13 @@ import {
   DEFAULT_FRET_MAX,
   DEFAULT_FRET_MIN,
   FRET_LIMIT,
+  NO_TUNING_OFFSETS,
+  OPEN_STRING_MIDI,
+  TUNING_OFFSET_LIMIT,
+  TUNING_PRESETS,
+  findTuningPreset,
+  midiToLabel,
+  openMidiOf,
   pitchClassOf,
   stringRange,
 } from './music.js';
@@ -36,6 +43,9 @@ const el = {
   optFretMin: document.getElementById('opt-fret-min'),
   optFretMax: document.getElementById('opt-fret-max'),
   optStrings: document.getElementById('opt-strings'),
+  optTuning: document.getElementById('opt-tuning'),
+  optTuningPreset: document.getElementById('opt-tuning-preset'),
+  tuningCurrent: document.getElementById('tuning-current'),
   settingsSummary: document.getElementById('settings-summary'),
   resultQuestions: document.getElementById('result-questions'),
   resultCountLabel: document.getElementById('result-count-label'),
@@ -114,12 +124,60 @@ function initFretSelects() {
   }
 }
 
+/** チューニングのプリセット一覧を作る。一致しないときのための「カスタム」も置く */
+function initTuningPresets() {
+  for (const preset of [...TUNING_PRESETS, { id: 'custom', label: 'カスタム' }]) {
+    const option = document.createElement('option');
+    option.value = preset.id;
+    option.textContent = preset.label;
+    el.optTuningPreset.appendChild(option);
+  }
+}
+
+/** 弦ごとの音を選ぶプルダウンを、弦の本数ぶん作る */
+function buildTuningControls(stringCount) {
+  if (el.optTuning.childElementCount === stringCount) return;
+
+  el.optTuning.textContent = '';
+  for (const stringNo of stringRange(stringCount)) {
+    const base = OPEN_STRING_MIDI[stringNo - 1];
+    const field = document.createElement('label');
+    field.className = 'tuning-field';
+
+    const name = document.createElement('span');
+    name.className = 'tuning-field-label';
+    name.textContent = `${stringNo}弦`;
+
+    const select = document.createElement('select');
+    select.dataset.string = String(stringNo);
+    select.setAttribute('aria-label', `${stringNo}弦の音`);
+    for (let offset = TUNING_OFFSET_LIMIT; offset >= -TUNING_OFFSET_LIMIT; offset--) {
+      const option = document.createElement('option');
+      option.value = String(offset);
+      option.textContent = midiToLabel(base + offset);
+      select.appendChild(option);
+    }
+
+    field.append(name, select);
+    el.optTuning.appendChild(field);
+  }
+}
+
+/** チューニングのプルダウン群に値を流し込む */
+function applyTuningToUI(tuning) {
+  for (const select of el.optTuning.querySelectorAll('select')) {
+    select.value = String(tuning[Number(select.dataset.string) - 1] ?? 0);
+  }
+}
+
 /** 保存された設定を UI へ反映する */
 function applySettingsToUI(settings) {
   const mode = el.optMode.querySelector(`input[value="${settings.mode}"]`);
   if (mode) mode.checked = true;
   const stringCount = el.optStringCount.querySelector(`input[value="${settings.stringCount}"]`);
   if (stringCount) stringCount.checked = true;
+  buildTuningControls(settings.stringCount);
+  applyTuningToUI(settings.tuning);
   el.optSharps.checked = settings.includeSharps;
   el.optFlats.checked = settings.includeFlats;
   el.optFretMin.value = String(settings.fretMin);
@@ -155,9 +213,15 @@ function readSettings() {
 
   const stringCount = Number(el.optStringCount.querySelector('input:checked').value);
 
+  const tuning = [...NO_TUNING_OFFSETS];
+  for (const select of el.optTuning.querySelectorAll('select')) {
+    tuning[Number(select.dataset.string) - 1] = Number(select.value);
+  }
+
   return {
     mode: el.optMode.querySelector('input:checked').value,
     stringCount,
+    tuning,
     includeSharps: el.optSharps.checked,
     includeFlats: el.optFlats.checked,
     strings,
@@ -240,6 +304,21 @@ function renderSettings() {
     settings.mode === Quiz.MODES.TIME_ATTACK
       ? '1 分で何問クリアできるか挑戦します（誤答すると 3 秒減ります）'
       : '指定された音を、指板からすべて探します';
+
+  // 弦を増やしたぶんのチューニング欄を用意する。
+  // 作り直すと各プルダウンが既定値に戻るため、読み取った値を必ず流し直す
+  buildTuningControls(settings.stringCount);
+  applyTuningToUI(settings.tuning);
+
+  // 今のチューニングを畳んだ状態でも分かるようにする
+  const preset = findTuningPreset(settings.tuning);
+  el.optTuningPreset.value = preset ? preset.id : 'custom';
+  el.tuningCurrent.textContent = preset
+    ? preset.label
+    : stringRange(settings.stringCount)
+        .map((stringNo) => midiToLabel(openMidiOf(stringNo, settings.tuning)))
+        .reverse()
+        .join(' ');
 
   // 弦の本数に応じて、対象の弦の選択肢を出し入れする
   for (const option of el.optStrings.querySelectorAll('[data-string-option]')) {
@@ -437,6 +516,11 @@ el.settings.addEventListener('change', (event) => {
   if (event.target === el.optFretMin || event.target === el.optFretMax) {
     normalizeFretRange(event.target);
   }
+  // プリセットを選んだら各弦へ流し込む（「カスタム」は表示専用なので何もしない）
+  if (event.target === el.optTuningPreset) {
+    const preset = TUNING_PRESETS.find((item) => item.id === el.optTuningPreset.value);
+    if (preset) applyTuningToUI(preset.offsets);
+  }
   // 弦の本数を変えたら対象の弦を選び直す。増やした弦を毎回手で足すのは煩わしく、
   // 減らしたときに範囲外の選択が残るのも避けたいため、その本数の全弦に揃える
   if (el.optStringCount.contains(event.target)) {
@@ -449,5 +533,6 @@ el.settings.addEventListener('change', (event) => {
 });
 
 initFretSelects();
+initTuningPresets();
 applySettingsToUI(loadSettings());
 render();

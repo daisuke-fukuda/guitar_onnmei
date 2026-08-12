@@ -4,7 +4,13 @@
  * 例外で止まらないよう、読み書きは失敗しても既定値で動き続ける。
  */
 
-import { FRET_LIMIT, STRING_COUNTS, stringRange } from './music.js';
+import {
+  FRET_LIMIT,
+  MAX_STRING_COUNT,
+  STRING_COUNTS,
+  TUNING_OFFSET_LIMIT,
+  stringRange,
+} from './music.js';
 import { DEFAULT_SETTINGS, MODES } from './quiz.js';
 
 const STORAGE_KEY = 'guitar-onnmei:settings';
@@ -24,6 +30,14 @@ function normalize(raw) {
 
   if (Object.values(MODES).includes(raw.mode)) settings.mode = raw.mode;
   if (STRING_COUNTS.includes(raw.stringCount)) settings.stringCount = raw.stringCount;
+
+  // チューニングは弦ごとの半音差。1 つでも範囲外なら全体を標準へ戻す
+  if (Array.isArray(raw.tuning) && raw.tuning.length === MAX_STRING_COUNT) {
+    const valid = raw.tuning.every(
+      (value) => Number.isInteger(value) && Math.abs(value) <= TUNING_OFFSET_LIMIT,
+    );
+    if (valid) settings.tuning = [...raw.tuning];
+  }
 
   settings.includeSharps = raw.includeSharps === true;
   settings.includeFlats = raw.includeFlats === true;
@@ -63,6 +77,7 @@ export function saveSettings(settings) {
       JSON.stringify({
         mode: settings.mode,
         stringCount: settings.stringCount,
+        tuning: settings.tuning,
         includeSharps: settings.includeSharps,
         includeFlats: settings.includeFlats,
         strings: settings.strings,

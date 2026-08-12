@@ -207,6 +207,59 @@ body {
   cursor: default;
 }
 
+/* 変則チューニングは使う人が限られるため、既定では畳んでおく */
+.tuning {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.tuning-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tuning-current {
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.tuning-strings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 4px 0 2px;
+}
+
+.tuning-field {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tuning-field-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.tuning-field select {
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
 .settings-summary {
   margin: 12px 0 0;
   padding-top: 10px;

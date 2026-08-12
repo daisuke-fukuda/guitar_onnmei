@@ -30,6 +30,31 @@ export function stringRange(stringCount = DEFAULT_STRING_COUNT) {
 
 export const ALL_STRINGS = stringRange(DEFAULT_STRING_COUNT);
 
+/**
+ * 変則チューニング。各弦の標準からの半音差を 1 弦から順に並べる。
+ * 標準音そのものを持たず差分で表すのは、6 弦と 7 弦で同じ定義を使い回すため。
+ */
+export const NO_TUNING_OFFSETS = Array(MAX_STRING_COUNT).fill(0);
+
+export const TUNING_PRESETS = [
+  { id: 'standard', label: '標準', offsets: [0, 0, 0, 0, 0, 0, 0] },
+  { id: 'dropD', label: 'ドロップ D', offsets: [0, 0, 0, 0, 0, -2, 0] },
+  { id: 'dadgad', label: 'DADGAD', offsets: [-2, -2, 0, 0, 0, -2, 0] },
+  { id: 'openG', label: 'オープン G', offsets: [-2, 0, 0, 0, -2, -2, 0] },
+  { id: 'openD', label: 'オープン D', offsets: [-2, -2, -1, 0, 0, -2, 0] },
+  { id: 'halfDown', label: '半音下げ', offsets: [-1, -1, -1, -1, -1, -1, -1] },
+  { id: 'wholeDown', label: '全音下げ', offsets: [-2, -2, -2, -2, -2, -2, -2] },
+];
+
+/** 各弦を上下できる幅（半音） */
+export const TUNING_OFFSET_LIMIT = 12;
+
+export function findTuningPreset(offsets) {
+  return TUNING_PRESETS.find((preset) =>
+    preset.offsets.every((value, index) => value === (offsets[index] ?? 0)),
+  );
+}
+
 /** 選択できるフレットの上限（一般的なエレキギターのフルレンジ） */
 export const FRET_LIMIT = 24;
 
@@ -41,14 +66,25 @@ export const DEFAULT_FRET_MAX = 7;
 export const SINGLE_INLAY_FRETS = [3, 5, 7, 9, 15, 17, 19, 21];
 export const DOUBLE_INLAY_FRETS = [12, 24];
 
+/** 開放弦の MIDI ノート番号（チューニングを反映） */
+export function openMidiOf(stringNo, tuning = NO_TUNING_OFFSETS) {
+  return OPEN_STRING_MIDI[stringNo - 1] + (tuning?.[stringNo - 1] ?? 0);
+}
+
 /** ポジションの MIDI ノート番号 */
-export function midiAt(stringNo, fret) {
-  return OPEN_STRING_MIDI[stringNo - 1] + fret;
+export function midiAt(stringNo, fret, tuning = NO_TUNING_OFFSETS) {
+  return openMidiOf(stringNo, tuning) + fret;
 }
 
 /** ポジションのピッチクラス (0-11) */
-export function pitchClassAt(stringNo, fret) {
-  return midiAt(stringNo, fret) % 12;
+export function pitchClassAt(stringNo, fret, tuning = NO_TUNING_OFFSETS) {
+  return midiAt(stringNo, fret, tuning) % 12;
+}
+
+/** MIDI 番号を「E2」のようなオクターブ付きの音名にする */
+export function midiToLabel(midi, useFlats = false) {
+  const names = useFlats ? FLAT_NAMES : SHARP_NAMES;
+  return `${names[midi % 12]}${Math.floor(midi / 12) - 1}`;
 }
 
 /** 音名（♯ / ♭ どちらの表記でも可）のピッチクラス */
@@ -66,9 +102,10 @@ export function isFlatName(noteName) {
 }
 
 /** ポジションの表示用音名。出題中の問題の表記系に合わせる */
-export function noteNameAt(stringNo, fret, useFlats = false) {
+export function noteNameAt(stringNo, fret, options = {}) {
+  const { useFlats = false, tuning = NO_TUNING_OFFSETS } = options;
   const names = useFlats ? FLAT_NAMES : SHARP_NAMES;
-  return names[pitchClassAt(stringNo, fret)];
+  return names[pitchClassAt(stringNo, fret, tuning)];
 }
 
 /**
@@ -80,13 +117,14 @@ export function findPositions(noteName, range = {}) {
     strings = ALL_STRINGS,
     fretMin = DEFAULT_FRET_MIN,
     fretMax = DEFAULT_FRET_MAX,
+    tuning = NO_TUNING_OFFSETS,
   } = range;
   const target = pitchClassOf(noteName);
 
   const positions = [];
   for (const stringNo of strings) {
     for (let fret = fretMin; fret <= fretMax; fret++) {
-      if (pitchClassAt(stringNo, fret) === target) {
+      if (pitchClassAt(stringNo, fret, tuning) === target) {
         positions.push({ string: stringNo, fret });
       }
     }
