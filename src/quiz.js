@@ -5,6 +5,7 @@
 
 import {
   ALL_STRINGS,
+  DEFAULT_INTERVAL_IDS,
   DEFAULT_STRING_COUNT,
   NO_TUNING_OFFSETS,
   DEFAULT_FRET_MAX,
@@ -12,14 +13,22 @@ import {
   FLAT_NOTES,
   NATURAL_NOTES,
   SHARP_NOTES,
+  findInterval,
   findPositions,
   isFlatName,
   noteNameAt,
+  transposeName,
 } from './music.js';
 
 export const MODES = {
   NORMAL: 'normal',
   TIME_ATTACK: 'timeattack',
+};
+
+/** 出題形式。音名そのものを探すか、ルートからの度数で探すか */
+export const QUIZ_TYPES = {
+  NOTE: 'note',
+  INTERVAL: 'interval',
 };
 
 /** 通常モードの出題数 */
@@ -33,6 +42,8 @@ export const MISS_PENALTY_MS = 3_000;
 
 export const DEFAULT_SETTINGS = {
   mode: MODES.NORMAL,
+  quizType: QUIZ_TYPES.NOTE,
+  intervals: [...DEFAULT_INTERVAL_IDS],
   stringCount: DEFAULT_STRING_COUNT,
   tuning: [...NO_TUNING_OFFSETS],
   includeSharps: false,
@@ -56,15 +67,55 @@ function shuffle(items) {
 }
 
 /**
- * 出題対象の音名を組み立てる。
- * ♯ と ♭ は異名同音だが、呼び名を両方覚えられるよう別の問題として扱う。
- * 対象弦に 1 箇所も存在しない音名は出題できないため除外する。
+ * 設定で有効になっている音名。
+ * ♯ と ♭ は異名同音だが、呼び名を両方覚えられるよう別の音として扱う。
+ */
+function enabledNoteNames(settings) {
+  const names = [...NATURAL_NOTES];
+  if (settings.includeSharps) names.push(...SHARP_NOTES);
+  if (settings.includeFlats) names.push(...FLAT_NOTES);
+  return names;
+}
+
+/**
+ * 音名モードの出題対象。
+ * 対象範囲に 1 箇所も存在しない音名は出題できないため除外する。
  */
 export function buildNotePool(settings) {
-  const pool = [...NATURAL_NOTES];
-  if (settings.includeSharps) pool.push(...SHARP_NOTES);
-  if (settings.includeFlats) pool.push(...FLAT_NOTES);
-  return pool.filter((noteName) => findPositions(noteName, settings).length > 0);
+  return enabledNoteNames(settings).filter(
+    (noteName) => findPositions(noteName, settings).length > 0,
+  );
+}
+
+/**
+ * 相対音モードの出題対象。ルート・度数・方向の組み合わせを作る。
+ * ルート自体は指板になくてもよい（頭の中の基準音）が、
+ * **答えの音が対象範囲に無い組み合わせは出題できない**ので除く。
+ */
+export function buildIntervalPool(settings) {
+  const specs = [];
+  for (const root of enabledNoteNames(settings)) {
+    // 答えの表記はルートに合わせる。1 問の中で ♯ と ♭ が混ざらないようにするため
+    const useFlats = isFlatName(root);
+    for (const intervalId of settings.intervals) {
+      const interval = findInterval(intervalId);
+      if (!interval) continue;
+
+      for (const direction of ['up', 'down']) {
+        const semitones = direction === 'up' ? interval.semitones : -interval.semitones;
+        const answer = transposeName(root, semitones, useFlats);
+        if (findPositions(answer, settings).length === 0) continue;
+        specs.push({ root, intervalId, direction, answer, useFlats });
+      }
+    }
+  }
+  return specs;
+}
+
+function buildPool(settings) {
+  return settings.quizType === QUIZ_TYPES.INTERVAL
+    ? buildIntervalPool(settings)
+    : buildNotePool(settings);
 }
 
 /**
@@ -72,7 +123,7 @@ export function buildNotePool(settings) {
  * プールが出題数に満たない場合は、1 巡してから再度シャッフルして繰り返す
  * （同じ音が 2 回出るが、1 巡目で全ての音を必ず 1 回は出せる）。
  */
-function pickNotes(pool, count) {
+function pickItems(pool, count) {
   const picked = [];
   while (picked.length < count) {
     picked.push(...shuffle(pool).slice(0, count - picked.length));
@@ -80,11 +131,20 @@ function pickNotes(pool, count) {
   return picked;
 }
 
-function createQuestion(noteName, settings) {
+/**
+ * プールの 1 要素から問題を作る。
+ * 音名モードは文字列、相対音モードは組み合わせオブジェクトが渡る。
+ */
+function createQuestion(item, settings) {
+  const isSpec = typeof item === 'object';
+  const noteName = isSpec ? item.answer : item;
   const positions = findPositions(noteName, settings);
+
   return {
     noteName,
-    useFlats: isFlatName(noteName),
+    // 相対音モードでは出題文の材料。音名モードでは null
+    prompt: isSpec ? item : null,
+    useFlats: isSpec ? item.useFlats : isFlatName(noteName),
     positions,
     targetKeys: new Set(positions.map((p) => positionKey(p.string, p.fret))),
     found: new Set(),
@@ -100,8 +160,8 @@ function appendQuestion(session) {
 }
 
 export function createSession(settings = DEFAULT_SETTINGS) {
-  const pool = buildNotePool(settings);
-  if (pool.length === 0) throw new Error('出題できる音名がありません');
+  const pool = buildPool(settings);
+  if (pool.length === 0) throw new Error('出題できる問題がありません');
 
   const timeAttack = settings.mode === MODES.TIME_ATTACK;
   const session = {
@@ -121,8 +181,8 @@ export function createSession(settings = DEFAULT_SETTINGS) {
   if (timeAttack) {
     appendQuestion(session);
   } else {
-    for (const noteName of pickNotes(pool, QUESTIONS_PER_SESSION)) {
-      session.questions.push(createQuestion(noteName, settings));
+    for (const item of pickItems(pool, QUESTIONS_PER_SESSION)) {
+      session.questions.push(createQuestion(item, settings));
     }
   }
   return session;

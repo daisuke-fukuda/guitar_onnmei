@@ -57,6 +57,23 @@
           </div>
 
           <div class="setting-row">
+            <span class="setting-label">出題</span>
+            <div class="setting-options" id="opt-quiz-type">
+              <label class="option">
+                <input type="radio" name="quizType" value="note" checked /> 音名
+              </label>
+              <label class="option">
+                <input type="radio" name="quizType" value="interval" /> 相対音（度数）
+              </label>
+            </div>
+          </div>
+
+          <div class="setting-row" id="interval-row" hidden>
+            <span class="setting-label">出題する度数</span>
+            <div class="setting-options" id="opt-intervals"></div>
+          </div>
+
+          <div class="setting-row">
             <span class="setting-label">音の種類</span>
             <div class="setting-options">
               <label class="option"><input type="checkbox" checked disabled /> ナチュラル</label>

@@ -4,6 +4,8 @@
 
 import {
   DEFAULT_FRET_MAX,
+  INTERVALS,
+  findInterval,
   DEFAULT_FRET_MIN,
   FRET_LIMIT,
   NO_TUNING_OFFSETS,
@@ -37,6 +39,9 @@ const el = {
   remaining: document.getElementById('remaining'),
   settings: document.getElementById('settings'),
   optMode: document.getElementById('opt-mode'),
+  optQuizType: document.getElementById('opt-quiz-type'),
+  optIntervals: document.getElementById('opt-intervals'),
+  intervalRow: document.getElementById('interval-row'),
   optStringCount: document.getElementById('opt-string-count'),
   optSharps: document.getElementById('opt-sharps'),
   optFlats: document.getElementById('opt-flats'),
@@ -124,6 +129,21 @@ function initFretSelects() {
   }
 }
 
+/** 度数のチェックボックスを作る */
+function initIntervalOptions() {
+  for (const interval of INTERVALS) {
+    const label = document.createElement('label');
+    label.className = 'option';
+
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.value = interval.id;
+
+    label.append(input, document.createTextNode(` ${interval.label}`));
+    el.optIntervals.appendChild(label);
+  }
+}
+
 /** チューニングのプリセット一覧を作る。一致しないときのための「カスタム」も置く */
 function initTuningPresets() {
   for (const preset of [...TUNING_PRESETS, { id: 'custom', label: 'カスタム' }]) {
@@ -174,6 +194,11 @@ function applyTuningToUI(tuning) {
 function applySettingsToUI(settings) {
   const mode = el.optMode.querySelector(`input[value="${settings.mode}"]`);
   if (mode) mode.checked = true;
+  const quizType = el.optQuizType.querySelector(`input[value="${settings.quizType}"]`);
+  if (quizType) quizType.checked = true;
+  for (const input of el.optIntervals.querySelectorAll('input')) {
+    input.checked = settings.intervals.includes(input.value);
+  }
   const stringCount = el.optStringCount.querySelector(`input[value="${settings.stringCount}"]`);
   if (stringCount) stringCount.checked = true;
   buildTuningControls(settings.stringCount);
@@ -218,8 +243,14 @@ function readSettings() {
     tuning[Number(select.dataset.string) - 1] = Number(select.value);
   }
 
+  const intervals = [...el.optIntervals.querySelectorAll('input:checked')].map(
+    (input) => input.value,
+  );
+
   return {
     mode: el.optMode.querySelector('input:checked').value,
+    quizType: el.optQuizType.querySelector('input:checked').value,
+    intervals,
     stringCount,
     tuning,
     includeSharps: el.optSharps.checked,
@@ -299,11 +330,17 @@ function handleSecondaryClick() {
 
 function renderSettings() {
   const settings = readSettings();
+  const isInterval = settings.quizType === Quiz.QUIZ_TYPES.INTERVAL;
+
+  // 度数の選択は相対音モードのときだけ意味を持つ
+  el.intervalRow.hidden = !isInterval;
 
   el.remaining.textContent =
     settings.mode === Quiz.MODES.TIME_ATTACK
       ? '1 分で何問クリアできるか挑戦します（誤答すると 3 秒減ります）'
-      : '指定された音を、指板からすべて探します';
+      : isInterval
+        ? 'ルート音から指定した度数の音を、指板からすべて探します'
+        : '指定された音を、指板からすべて探します';
 
   // 弦を増やしたぶんのチューニング欄を用意する。
   // 作り直すと各プルダウンが既定値に戻るため、読み取った値を必ず流し直す
@@ -339,10 +376,24 @@ function renderSettings() {
     return;
   }
 
-  const pool = Quiz.buildNotePool(settings);
-  const sorted = [...pool].sort((a, b) => pitchClassOf(a) - pitchClassOf(b));
-  el.settingsSummary.textContent =
-    `${settings.fretMin}〜${settings.fretMax}フレット／出題する音 ${pool.length} 種（${sorted.join('  ')}）／全 ${Quiz.QUESTIONS_PER_SESSION} 問`;
+  if (isInterval && settings.intervals.length === 0) {
+    el.settingsSummary.textContent = '出題する度数を 1 つ以上選んでください';
+    el.settingsSummary.classList.add('is-warning');
+    el.primaryButton.disabled = true;
+    return;
+  }
+
+  const range = `${settings.fretMin}〜${settings.fretMax}フレット`;
+  if (isInterval) {
+    const specs = Quiz.buildIntervalPool(settings);
+    el.settingsSummary.textContent =
+      `${range}／${settings.intervals.length} 種の度数 × 上下＝${specs.length} 通り／全 ${Quiz.QUESTIONS_PER_SESSION} 問`;
+  } else {
+    const pool = Quiz.buildNotePool(settings);
+    const sorted = [...pool].sort((a, b) => pitchClassOf(a) - pitchClassOf(b));
+    el.settingsSummary.textContent =
+      `${range}／出題する音 ${pool.length} 種（${sorted.join('  ')}）／全 ${Quiz.QUESTIONS_PER_SESSION} 問`;
+  }
   el.settingsSummary.classList.remove('is-warning');
   el.primaryButton.disabled = false;
 }
@@ -358,7 +409,8 @@ function describeSettings(settings) {
       ? `全弦（${settings.stringCount}弦）`
       : `${settings.strings.join('・')}弦`;
 
-  return `${notes.join('+')} / ${strings}`;
+  const type = settings.quizType === Quiz.QUIZ_TYPES.INTERVAL ? '相対音' : '音名';
+  return `${type} / ${notes.join('+')} / ${strings}`;
 }
 
 function buildShareText() {
@@ -427,6 +479,14 @@ async function handleMoreClick() {
   }
 }
 
+/** 出題文の後半。相対音モードでは「の長3度上を」のように度数を挟む */
+function promptSuffix(question, verb) {
+  if (!question.prompt) return `をすべて見つけ${verb}`;
+  const interval = findInterval(question.prompt.intervalId);
+  const direction = question.prompt.direction === 'up' ? '上' : '下';
+  return `の ${interval.label}${direction} をすべて見つけ${verb}`;
+}
+
 function renderResult() {
   const stats = Quiz.summary(session);
   const timeAttack = stats.mode === Quiz.MODES.TIME_ATTACK;
@@ -484,10 +544,11 @@ function render() {
   }
 
   const question = Quiz.currentQuestion(session);
-  el.questionNote.textContent = question.noteName;
+  // 相対音モードで見せるのはルート音。答えの音名は伏せる
+  el.questionNote.textContent = question.prompt ? question.prompt.root : question.noteName;
 
   if (state === STATE.ANSWERING) {
-    el.promptLead.textContent = 'をすべて見つけてください';
+    el.promptLead.textContent = promptSuffix(question, 'てください');
     el.remaining.textContent = `残り ${Quiz.remainingCount(session)} 箇所`;
     el.primaryButton.textContent = '次の問題へ';
     el.primaryButton.disabled = true;
@@ -496,8 +557,11 @@ function render() {
   }
 
   // STATE.CLEARED
-  el.promptLead.textContent = 'をすべて見つけました';
-  el.remaining.textContent = `クリア！　この問題のミス ${question.missed.size} 回`;
+  el.promptLead.textContent = promptSuffix(question, 'ました');
+  // 相対音モードは答えの音名を伏せて出題しているので、ここで答え合わせをする
+  el.remaining.textContent = question.prompt
+    ? `クリア！　答えは ${question.noteName}（この問題のミス ${question.missed.size} 回）`
+    : `クリア！　この問題のミス ${question.missed.size} 回`;
   // タイムアタックは自動で次へ送るため、ボタンを押させない
   el.primaryButton.textContent = timeAttack
     ? '次の問題へ'
@@ -534,5 +598,6 @@ el.settings.addEventListener('change', (event) => {
 
 initFretSelects();
 initTuningPresets();
+initIntervalOptions();
 applySettingsToUI(loadSettings());
 render();

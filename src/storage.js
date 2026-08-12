@@ -6,12 +6,13 @@
 
 import {
   FRET_LIMIT,
+  INTERVALS,
   MAX_STRING_COUNT,
   STRING_COUNTS,
   TUNING_OFFSET_LIMIT,
   stringRange,
 } from './music.js';
-import { DEFAULT_SETTINGS, MODES } from './quiz.js';
+import { DEFAULT_SETTINGS, MODES, QUIZ_TYPES } from './quiz.js';
 
 const STORAGE_KEY = 'guitar-onnmei:settings';
 
@@ -29,6 +30,13 @@ function normalize(raw) {
   if (!raw || typeof raw !== 'object') return settings;
 
   if (Object.values(MODES).includes(raw.mode)) settings.mode = raw.mode;
+  if (Object.values(QUIZ_TYPES).includes(raw.quizType)) settings.quizType = raw.quizType;
+
+  if (Array.isArray(raw.intervals)) {
+    const ids = INTERVALS.map((interval) => interval.id).filter((id) => raw.intervals.includes(id));
+    // 1 つも選ばれていないと相対音モードで出題できないので既定値へ戻す
+    if (ids.length > 0) settings.intervals = ids;
+  }
   if (STRING_COUNTS.includes(raw.stringCount)) settings.stringCount = raw.stringCount;
 
   // チューニングは弦ごとの半音差。1 つでも範囲外なら全体を標準へ戻す
@@ -76,6 +84,8 @@ export function saveSettings(settings) {
       STORAGE_KEY,
       JSON.stringify({
         mode: settings.mode,
+        quizType: settings.quizType,
+        intervals: settings.intervals,
         stringCount: settings.stringCount,
         tuning: settings.tuning,
         includeSharps: settings.includeSharps,
