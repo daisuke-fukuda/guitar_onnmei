@@ -254,8 +254,8 @@ body {
 
 .result-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
   margin: 0;
 }
 
@@ -705,6 +705,11 @@ body {
   .result-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
+  }
+
+  /* 5 項目だと 2 列で 1 つ余るため、正答率を全幅にして締める */
+  .result-item.is-primary {
+    grid-column: span 2;
   }
 
   .result-item dd {

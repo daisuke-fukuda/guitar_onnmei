@@ -86,7 +86,19 @@ export function createSession(settings = DEFAULT_SETTINGS) {
     ),
     index: 0,
     score: { correctTaps: 0, wrongTaps: 0 },
+    startedAt: Date.now(),
+    finishedAt: null,
   };
+}
+
+/** 計測を止める。最終問題をクリアした時点で呼ぶ */
+export function finishSession(session) {
+  if (session.finishedAt === null) session.finishedAt = Date.now();
+}
+
+/** スタートからの経過時間（ミリ秒）。終了後は最終問題クリア時点で固定される */
+export function elapsedMs(session) {
+  return (session.finishedAt ?? Date.now()) - session.startedAt;
 }
 
 export function currentQuestion(session) {
@@ -148,5 +160,6 @@ export function summary(session) {
     correctTaps,
     wrongTaps,
     accuracy: total === 0 ? 0 : (correctTaps / total) * 100,
+    elapsedMs: elapsedMs(session),
   };
 }

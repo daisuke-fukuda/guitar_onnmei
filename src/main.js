@@ -24,6 +24,7 @@ const el = {
   app: document.getElementById('app'),
   progress: document.getElementById('progress'),
   miss: document.getElementById('miss'),
+  timer: document.getElementById('timer'),
   questionNote: document.getElementById('question-note'),
   promptLead: document.getElementById('prompt-lead'),
   remaining: document.getElementById('remaining'),
@@ -37,6 +38,7 @@ const el = {
   resultQuestions: document.getElementById('result-questions'),
   resultCorrect: document.getElementById('result-correct'),
   resultWrong: document.getElementById('result-wrong'),
+  resultTime: document.getElementById('result-time'),
   resultAccuracy: document.getElementById('result-accuracy'),
   primaryButton: document.getElementById('primary-button'),
   secondaryButton: document.getElementById('secondary-button'),
@@ -52,6 +54,29 @@ const board = createFretboard(document.getElementById('fretboard'), handleCellCl
 
 let session = null;
 let state = STATE.IDLE;
+let timerId = null;
+
+/** 経過時間を m:ss で表す */
+function formatDuration(ms) {
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
+
+function renderTimer() {
+  el.timer.textContent = session ? formatDuration(Quiz.elapsedMs(session)) : '0:00';
+}
+
+/** 回答中だけ時計を進める。1 秒表示なので 500ms 間隔で十分な精度が出る */
+function setTimerRunning(running) {
+  if (running && timerId === null) {
+    timerId = setInterval(renderTimer, 500);
+  } else if (!running && timerId !== null) {
+    clearInterval(timerId);
+    timerId = null;
+  }
+}
 
 /** フレット範囲のプルダウンを 0〜FRET_LIMIT で作る */
 function initFretSelects() {
@@ -136,6 +161,8 @@ function handleCellClick(stringNo, fret) {
   const result = Quiz.answer(session, stringNo, fret);
   if (result.type === 'ignored') return;
 
+  if (result.cleared && Quiz.isLastQuestion(session)) Quiz.finishSession(session);
+
   board.markCell(stringNo, fret, result.type, result.noteName);
   el.srStatus.textContent =
     result.type === 'correct'
@@ -212,6 +239,7 @@ function buildShareText() {
   return [
     'ギター指板 音名クイズ',
     `${stats.questionCount}問 正答率 ${stats.accuracy.toFixed(1)}%（正解 ${stats.correctTaps} / ミス ${stats.wrongTaps}）`,
+    `タイム ${formatDuration(stats.elapsedMs)}`,
     `出題: ${describeSettings(session.settings)}`,
   ].join('\n');
 }
@@ -272,6 +300,7 @@ function renderResult() {
   el.resultQuestions.textContent = `${stats.questionCount} 問`;
   el.resultCorrect.textContent = `${stats.correctTaps} 回`;
   el.resultWrong.textContent = `${stats.wrongTaps} 回`;
+  el.resultTime.textContent = formatDuration(stats.elapsedMs);
   el.resultAccuracy.textContent = `${stats.accuracy.toFixed(1)} %`;
   el.shareNote.textContent = '';
   updateShareLinks();
@@ -287,6 +316,8 @@ function render() {
     el.promptLead.textContent = '';
     el.remaining.textContent = '指定された音を、指板からすべて探します';
     el.primaryButton.textContent = 'スタート';
+    setTimerRunning(false);
+    el.timer.textContent = '0:00';
     board.setInteractive(false);
     renderSettings();
     return;
@@ -294,6 +325,9 @@ function render() {
 
   el.progress.textContent = `${session.index + 1} / ${Quiz.QUESTIONS_PER_SESSION} 問`;
   el.miss.textContent = `ミス ${session.score.wrongTaps}`;
+
+  setTimerRunning(state !== STATE.RESULT);
+  renderTimer();
 
   if (state === STATE.RESULT) {
     renderResult();
