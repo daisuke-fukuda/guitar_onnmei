@@ -574,11 +574,20 @@ body {
 
 /* ---------- フッター ---------- */
 
+/*
+ * 設定パネルと指板で縦に長くなり、端末によってはボタンが画面外に出るため
+ * 画面下端に貼り付ける。最下部まで送ると通常の位置に戻り、著作者表示が出る。
+ */
 .footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
   display: flex;
   justify-content: flex-end;
   gap: 10px;
   margin-top: 24px;
+  padding: 10px 0;
+  background: var(--page-bg);
 }
 
 /* 「設定を変える」は結果画面だけに出す */
