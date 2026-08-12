@@ -31,7 +31,11 @@ const el = {
   resultAccuracy: document.getElementById('result-accuracy'),
   primaryButton: document.getElementById('primary-button'),
   secondaryButton: document.getElementById('secondary-button'),
-  shareButton: document.getElementById('share-button'),
+  shareX: document.getElementById('share-x'),
+  shareLine: document.getElementById('share-line'),
+  shareFacebook: document.getElementById('share-facebook'),
+  shareCopy: document.getElementById('share-copy'),
+  shareMore: document.getElementById('share-more'),
   shareNote: document.getElementById('share-note'),
   srStatus: document.getElementById('sr-status'),
 };
@@ -159,26 +163,52 @@ function shareUrl() {
   return `${location.origin}${location.pathname}`;
 }
 
-async function handleShareClick() {
-  if (!session) return;
+let shareNoteTimer = null;
 
+function showShareNote(message) {
+  el.shareNote.textContent = message;
+  clearTimeout(shareNoteTimer);
+  shareNoteTimer = setTimeout(() => {
+    el.shareNote.textContent = '';
+  }, 2500);
+}
+
+/** 各 SNS の共有 URL を組み立て、リンクに設定する */
+function updateShareLinks() {
   const text = buildShareText();
   const url = shareUrl();
+  const encodedText = encodeURIComponent(text);
+  const encodedUrl = encodeURIComponent(url);
 
-  // 対応環境（主にスマートフォン）では OS の共有シートに任せる
-  if (navigator.share) {
-    try {
-      await navigator.share({ title: 'ギター指板 音名クイズ', text, url });
-      return;
-    } catch (error) {
-      // ユーザーが共有シートを閉じただけの場合は何もしない
-      if (error.name === 'AbortError') return;
-    }
+  el.shareX.href = `https://x.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`;
+  el.shareLine.href = `https://social-plugins.line.me/lineit/share?url=${encodedUrl}&text=${encodedText}`;
+  // Facebook は本文を受け取らず、リンク先の OGP を読んでカードを作る
+  el.shareFacebook.href = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
+
+  // OS の共有シートは対応環境でのみ出す
+  el.shareMore.hidden = !navigator.share;
+}
+
+async function handleCopyClick() {
+  try {
+    await navigator.clipboard.writeText(`${buildShareText()}\n${shareUrl()}`);
+    showShareNote('コピーしました');
+  } catch {
+    showShareNote('コピーできませんでした');
   }
+}
 
-  // 非対応環境では X の投稿画面を開く（投稿はユーザーが確定する）
-  const intent = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
-  window.open(intent, '_blank', 'noopener,noreferrer');
+async function handleMoreClick() {
+  try {
+    await navigator.share({
+      title: 'ギター指板 音名クイズ',
+      text: buildShareText(),
+      url: shareUrl(),
+    });
+  } catch (error) {
+    // ユーザーが共有シートを閉じただけの場合は何も出さない
+    if (error.name !== 'AbortError') showShareNote('シェアできませんでした');
+  }
 }
 
 function renderResult() {
@@ -187,7 +217,8 @@ function renderResult() {
   el.resultCorrect.textContent = `${stats.correctTaps} 回`;
   el.resultWrong.textContent = `${stats.wrongTaps} 回`;
   el.resultAccuracy.textContent = `${stats.accuracy.toFixed(1)} %`;
-  el.shareNote.textContent = navigator.share ? '' : 'X の投稿画面が開きます';
+  el.shareNote.textContent = '';
+  updateShareLinks();
 }
 
 function render() {
@@ -238,7 +269,8 @@ function render() {
 
 el.primaryButton.addEventListener('click', handlePrimaryClick);
 el.secondaryButton.addEventListener('click', handleSecondaryClick);
-el.shareButton.addEventListener('click', handleShareClick);
+el.shareCopy.addEventListener('click', handleCopyClick);
+el.shareMore.addEventListener('click', handleMoreClick);
 el.settings.addEventListener('change', () => {
   if (state === STATE.IDLE) renderSettings();
 });

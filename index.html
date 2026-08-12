@@ -4,6 +4,21 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>ギター指板 音名クイズ</title>
+    <meta
+      name="description"
+      content="ギターの指板上の音名をクイズ形式で覚える練習アプリ。0〜7フレットから指定された音をすべて探します。"
+    />
+
+    <!-- SNS でシェアされたときのカード表示用。Facebook はテキストを受け取らずここを読む -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="ギター指板 音名クイズ" />
+    <meta
+      property="og:description"
+      content="ギターの指板上の音名をクイズ形式で覚える練習アプリ。0〜7フレットから指定された音をすべて探します。"
+    />
+    <meta property="og:url" content="https://daisuke-fukuda.github.io/guitar_onnmei/" />
+    <meta name="twitter:card" content="summary" />
+
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -74,7 +89,36 @@
           </dl>
 
           <div class="result-actions">
-            <button class="share-button" id="share-button" type="button">結果をシェア</button>
+            <p class="share-title">結果をシェア</p>
+            <div class="share-buttons">
+              <a
+                class="share-chip is-x"
+                id="share-x"
+                target="_blank"
+                rel="noopener noreferrer"
+                >X</a
+              >
+              <a
+                class="share-chip is-line"
+                id="share-line"
+                target="_blank"
+                rel="noopener noreferrer"
+                >LINE</a
+              >
+              <a
+                class="share-chip is-facebook"
+                id="share-facebook"
+                target="_blank"
+                rel="noopener noreferrer"
+                >Facebook</a
+              >
+              <button class="share-chip is-copy" id="share-copy" type="button">
+                コピー
+              </button>
+              <button class="share-chip is-more" id="share-more" type="button">
+                その他
+              </button>
+            </div>
             <p class="share-note" id="share-note" role="status" aria-live="polite"></p>
           </div>
         </section>

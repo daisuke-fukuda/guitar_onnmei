@@ -276,29 +276,75 @@ body {
   text-align: center;
 }
 
-.share-button {
-  min-width: 180px;
-  padding: 11px 22px;
-  border: 1px solid var(--accent);
-  border-radius: 8px;
+.share-title {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.share-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.share-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 84px;
+  padding: 9px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
   background: var(--panel-bg);
-  color: var(--accent);
+  color: var(--text);
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
+  text-decoration: none;
   cursor: pointer;
-  transition: background-color 150ms ease;
+  transition: opacity 150ms ease, background-color 150ms ease;
   -webkit-tap-highlight-color: transparent;
 }
 
+.share-chip[hidden] {
+  display: none;
+}
+
+/* 各サービスのブランド色。押し先がひと目で分かるようにする */
+.share-chip.is-x {
+  border-color: #000;
+  background: #000;
+  color: #fff;
+}
+
+.share-chip.is-line {
+  border-color: #06c755;
+  background: #06c755;
+  color: #fff;
+}
+
+.share-chip.is-facebook {
+  border-color: #1877f2;
+  background: #1877f2;
+  color: #fff;
+}
+
 @media (hover: hover) {
-  .share-button:hover {
-    background: #fdf1e6;
+  .share-chip:hover {
+    opacity: 0.82;
+  }
+
+  .share-chip.is-copy:hover,
+  .share-chip.is-more:hover {
+    opacity: 1;
+    background: var(--page-bg);
   }
 }
 
-.share-button:active {
-  background: #f9e3cf;
+.share-chip:active {
+  opacity: 0.7;
 }
 
 .share-note {

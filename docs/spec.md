@@ -382,14 +382,22 @@ idle ──[スタート]──> answering ──[全正解]──> cleared
 - 出題設定を載せるのは、正答率が設定によって大きく変わるため。条件が分からないと数字を比較できない
 - URL は `location.origin + location.pathname` から組み立てる（クエリやハッシュを落とす）
 
-共有手段は環境で切り替える。
+共有先はボタンで選ぶ。
 
-| 環境 | 動作 |
+| ボタン | 動作 |
 | --- | --- |
-| `navigator.share` あり（主にスマートフォン） | OS の共有シートを開く。ユーザーがシートを閉じた場合（`AbortError`）は何もしない |
-| なし | X の投稿画面（`https://x.com/intent/tweet`）を別タブで開く |
+| X | `https://x.com/intent/tweet?text=...&url=...` を別タブで開く |
+| LINE | `https://social-plugins.line.me/lineit/share?url=...&text=...` を別タブで開く |
+| Facebook | `https://www.facebook.com/sharer/sharer.php?u=...` を別タブで開く |
+| コピー | 本文と URL をクリップボードへ書き込み、「コピーしました」と一時表示する |
+| その他 | OS の共有シート（`navigator.share`）を開く。**非対応環境では非表示にする** |
 
-**いずれの場合も自動投稿はしない。** 投稿するかどうかは共有シートまたは X の画面でユーザーが決める。非対応環境では、押す前に「X の投稿画面が開きます」と補足を出す。
+- X・LINE・Facebook は `<a target="_blank" rel="noopener noreferrer">` として実装する。ボタン + `window.open` ではポップアップブロックに掛かることがあるため
+- 各サービスのブランド色で塗り分け、押し先がひと目で分かるようにする
+- **いずれも自動投稿はしない。** 投稿するかは各サービスの画面でユーザーが決める
+- 共有シートをユーザーが閉じた場合（`AbortError`）はエラー表示を出さない
+
+**Facebook は本文を受け取らない。** リンク先の OGP を読んでカードを作るため、`index.html` に `og:title` / `og:description` / `og:url` と `twitter:card` を置く。
 
 ---
 
