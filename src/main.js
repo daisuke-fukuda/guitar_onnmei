@@ -483,11 +483,15 @@ function describeSettings(settings) {
   return `${type} / ${notes.join('+')} / ${strings}`;
 }
 
+/** ツール名と、共有するときに付けるハッシュタグ */
+const APP_NAME = 'ギター音名かるた';
+const SHARE_HASHTAG = '#ギター音名かるた';
+
 function buildShareText() {
   const stats = Quiz.summary(session);
   const timeAttack = stats.mode === Quiz.MODES.TIME_ATTACK;
   return [
-    timeAttack ? 'ギター指板 音名クイズ タイムアタック' : 'ギター指板 音名クイズ',
+    timeAttack ? `${APP_NAME} タイムアタック` : APP_NAME,
     timeAttack
       ? `1分で ${stats.clearedCount} 問クリア（正解 ${stats.correctTaps} / ミス ${stats.wrongTaps}）`
       : `${stats.questionCount}問 正答率 ${stats.accuracy.toFixed(1)}%（正解 ${stats.correctTaps} / ミス ${stats.wrongTaps}）`,
@@ -495,6 +499,7 @@ function buildShareText() {
       ? `正答率 ${stats.accuracy.toFixed(1)}%`
       : `タイム ${formatDuration(stats.elapsedMs)}`,
     `出題: ${describeSettings(session.settings)}`,
+    SHARE_HASHTAG,
   ].join('\n');
 }
 
@@ -539,7 +544,7 @@ async function handleCopyClick() {
 async function handleMoreClick() {
   try {
     await navigator.share({
-      title: 'ギター指板 音名クイズ',
+      title: APP_NAME,
       text: buildShareText(),
       url: shareUrl(),
     });

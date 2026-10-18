@@ -3,18 +3,18 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ギター指板 音名クイズ</title>
+    <title>ギター音名かるた</title>
     <meta
       name="description"
-      content="ギターの指板上の音名をクイズ形式で覚える練習アプリ。0〜7フレットから指定された音をすべて探します。"
+      content="ギターの指板上の音名や度数（相対音）の位置を覚える練習クイズ。出された音を、かるたのように指板からすべて探して答えます。"
     />
 
     <!-- SNS でシェアされたときのカード表示用 -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="ギター指板 音名クイズ" />
+    <meta property="og:title" content="ギター音名かるた" />
     <meta
       property="og:description"
-      content="ギターの指板上の音名をクイズ形式で覚える練習アプリ。0〜7フレットから指定された音をすべて探します。"
+      content="ギターの指板上の音名や度数（相対音）の位置を覚える練習クイズ。出された音を、かるたのように指板からすべて探して答えます。"
     />
     <meta property="og:url" content="https://onmei.moyashidaisuke.com/" />
     <meta name="twitter:card" content="summary" />
@@ -24,7 +24,10 @@
   <body>
     <div class="app" id="app" data-state="idle">
       <header class="header">
-        <h1 class="title">ギター指板 音名クイズ</h1>
+        <div class="title-block">
+          <h1 class="title">ギター音名かるた</h1>
+          <p class="subtitle">ギターの指板で、音名・度数の位置を覚える練習クイズ</p>
+        </div>
         <div class="stats">
           <span class="stat" id="progress">0 / 10 問</span>
           <span class="stat" id="miss">ミス 0</span>
@@ -246,6 +249,13 @@
       <footer class="site-footer">
         <p class="credit">
           © 2026 moyashidaisuke<span class="credit-sep">·</span
+          ><a
+            class="credit-link"
+            href="https://moyashidaisuke.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            >福田大翼 Official Website</a
+          ><span class="credit-sep">·</span
           ><a
             class="credit-link"
             href="https://x.com/moyashidaisuke"
