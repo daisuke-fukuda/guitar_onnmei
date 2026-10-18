@@ -51,6 +51,8 @@ body {
 
 .header {
   display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
   align-items: baseline;
   justify-content: space-between;
   padding-bottom: 14px;
@@ -63,9 +65,18 @@ body {
   letter-spacing: 0.02em;
 }
 
+/* ツール名だけでは中身が分からないので、何ができるかを一文で添える */
+.subtitle {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .stats {
   display: flex;
   gap: 20px;
+  margin-left: auto;
+  white-space: nowrap;
   font-size: 14px;
   font-variant-numeric: tabular-nums;
   color: var(--muted);
@@ -961,4 +972,9 @@ body {
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* リンクの途中では折り返さない */
+.credit-link {
+  white-space: nowrap;
 }
