@@ -1,0 +1,16 @@
+{
+  // Cloudflare Workers の静的配信で公開する（https://onmei.moyashidaisuke.com/）。
+  // ビルドは不要で、リポジトリのルートをそのまま配信する。公開しないファイルは .assetsignore に書く。
+  "name": "guitar-onnmei",
+  "compatibility_date": "2026-10-14",
+  "assets": {
+    "directory": "."
+  },
+  // 独自ドメイン。moyashidaisuke.com のゾーンは同じ Cloudflare アカウントで有効
+  // https://developers.cloudflare.com/workers/configuration/routing/custom-domains/
+  "routes": [
+    { "pattern": "onmei.moyashidaisuke.com", "custom_domain": true }
+  ],
+  // workers.dev の URL では配信しない
+  "workers_dev": false
+}

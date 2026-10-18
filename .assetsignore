@@ -1,0 +1,12 @@
+# Workers の静的配信にアップロードしないファイル（.gitignore と同じ書き方）
+# https://developers.cloudflare.com/workers/static-assets/binding/#ignoring-assets
+.git
+.claude
+.wrangler
+.DS_Store
+node_modules
+.gitignore
+.assetsignore
+wrangler.jsonc
+docs
+assets/README.md
