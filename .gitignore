@@ -3,3 +3,6 @@
 
 # Claude Code のローカル設定
 .claude/settings.local.json
+
+# Wrangler のローカル作業フォルダ
+.wrangler/
