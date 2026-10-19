@@ -1,0 +1,26 @@
+<!doctype html>
+<!-- 共有用画像 og.png（1200×630）の元。再生成：Chrome で --headless=new --window-size=1200,630 --virtual-time-budget=6000 --screenshot=og.png を付けてこのファイルを開く。 -->
+<html lang="ja"><head><meta charset="utf-8">
+<style>
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
+  body { box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; padding: 0 96px; background: #f4f1ec; color: #2a251f; font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif; }
+  .label { margin: 0 0 18px; color: #b4530f; font-size: 30px; font-weight: 700; letter-spacing: .08em; }
+  h1 { margin: 0; font-size: 92px; font-weight: 800; letter-spacing: .02em; line-height: 1.15; }
+  .lead { margin: 22px 0 0; max-width: 520px; color: #5f574d; font-size: 32px; font-weight: 600; }
+  .board { position: absolute; right: 96px; top: 150px; display: grid; grid-template-columns: 54px repeat(7, 62px); grid-template-rows: repeat(6, 34px); background: linear-gradient(90deg, #e6dece 54px, #9a938a 54px); border-radius: 6px; overflow: hidden; }
+  .cell { position: relative; border-right: 3px solid #b9b3a5; }
+  .cell.open { border-right: 6px solid #ece4d3; }
+  .cell::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 2px; background: #ddd8cc; }
+  .dot { position: absolute; top: 3px; left: 50%; z-index: 1; width: 28px; height: 28px; margin-left: -14px; border-radius: 50%; background: #b4530f; color: #fff; font: 700 17px/28px sans-serif; text-align: center; }
+  .caption { position: absolute; right: 96px; top: 372px; width: 488px; color: #7d7469; font-size: 24px; font-weight: 600; text-align: center; }
+  .url { position: absolute; right: 96px; bottom: 56px; color: #7d7469; font-size: 28px; font-weight: 600; }
+</style></head>
+<body>
+  <p class="label">ギターの練習クイズ</p>
+  <h1>ギター<br />音名かるた</h1>
+  <p class="lead">指板で、音名・度数の位置を覚える</p>
+  <!-- 0〜7フレットの C（2弦1F・5弦3F・3弦5F） -->
+  <div class="board"><div class="cell open"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell open"></div><div class="cell"><span class="dot">C</span></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell open"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"><span class="dot">C</span></div><div class="cell"></div><div class="cell"></div><div class="cell open"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell open"></div><div class="cell"></div><div class="cell"></div><div class="cell"><span class="dot">C</span></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell open"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div></div>
+  <p class="caption">C の位置を、指板から全部探す</p>
+  <p class="url">onmei.moyashidaisuke.com</p>
+</body></html>
